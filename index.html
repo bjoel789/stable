@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Stable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDE3C8; --card:#FBF6E9; --ink:#241F1A; --ink-soft:#5C5041; --ink-faint:#8B7F6C;
+    --brick:#B5432B; --brick-dark:#8F3220; --green:#4B6B45;
+    --line: rgba(36,31,26,0.14); --line-strong: rgba(36,31,26,0.28);
+    --fish:#2F6B6E; --poultry:#C68A2E; --pork:#B5654B; --pasta:#8E6B3F;
+    --soups:#4B6B45; --salads:#5E7F3B; --breakfast:#A9722B; --sauces:#7A3030;
+    --desserts:#9B5C7A; --drinks:#4A6B8A;
+    --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif; -webkit-font-smoothing:antialiased;
+    min-height:100vh; padding-bottom: calc(72px + var(--safe-b));
+    -webkit-overflow-scrolling:touch;
+  }
+  h1,h2,h3{font-family:'Fraunces', serif; font-weight:600; letter-spacing:-0.01em; margin:0;}
+  button{font-family:inherit;}
+  .hidden{display:none !important;}
+
+  header.top{
+    padding: calc(18px + var(--safe-t)) 20px 14px;
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:1px solid var(--line);
+  }
+  header.top h1{font-size:26px;}
+  header.top .count{font-size:13px; color:var(--ink-faint); font-weight:500;}
+
+  .toolbar{padding:14px 20px 4px;}
+  .search{
+    width:100%; padding:10px 14px; border-radius:10px;
+    border:1px solid var(--line-strong); background:var(--card);
+    font-size:16px; color:var(--ink);
+  }
+  .search::placeholder{color:var(--ink-faint);}
+  .tabs{display:flex; gap:8px; overflow-x:auto; padding:14px 20px 6px; -webkit-overflow-scrolling:touch;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:0 0 auto; padding:7px 14px; border-radius:999px;
+    border:1px solid var(--line-strong); background:transparent;
+    font-size:13.5px; font-weight:500; color:var(--ink-soft);
+    white-space:nowrap; cursor:pointer;
+  }
+  .tab.active{background:var(--ink); border-color:var(--ink); color:var(--paper);}
+  .tab.keepers.active{background:var(--green); border-color:var(--green);}
+
+  #view-library{padding:6px 20px 24px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-top:10px;}
+  .card{
+    background:var(--card); border-radius:12px; padding:14px; cursor:pointer;
+    border-top:4px solid var(--cat-color, var(--ink)); box-shadow:0 1px 0 var(--line);
+    display:flex; flex-direction:column; gap:8px; min-height:132px;
+  }
+  .card .cat-pill{
+    align-self:flex-start; font-size:11px; font-weight:600;
+    padding:2px 8px; border-radius:999px; color:#fff; background:var(--cat-color, var(--ink));
+  }
+  .card h3{font-size:16px; line-height:1.25;}
+  .card .meta{font-size:12.5px; color:var(--ink-faint);}
+  .card .bottom-row{margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;}
+  .rating-chip{font-size:12px; font-weight:600; color:var(--brick-dark);}
+  .rating-chip.unrated{color:var(--ink-faint); font-weight:500;}
+  .rating-chip.low{color:#9A6A20;}
+  .week-badge{font-size:11px; font-weight:600; color:var(--green);}
+  .empty-state{padding:60px 24px; text-align:center; color:var(--ink-soft);}
+  .empty-state h3{font-size:19px; margin-bottom:8px;}
+  .empty-state p{font-size:14.5px; line-height:1.5; margin:0; color:var(--ink-faint);}
+
+  #view-detail{padding:16px 20px 32px;}
+  .back{
+    background:none; border:none; color:var(--ink-soft);
+    font-size:14px; font-weight:500; padding:6px 0 14px; cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+  }
+  .back:before{content:"\2190";}
+  .detail-head .cat-pill{
+    display:inline-block; font-size:11.5px; font-weight:600;
+    padding:3px 10px; border-radius:999px; color:#fff;
+    background:var(--cat-color,var(--ink)); margin-bottom:10px;
+  }
+  .detail-head h2{font-size:24px; line-height:1.2;}
+  .detail-head .meta{color:var(--ink-faint); font-size:13.5px; margin-top:6px;}
+  .rate-row{display:flex; align-items:center; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  .btn{border:none; border-radius:9px; padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer;}
+  .btn-primary{background:var(--brick); color:#fff;}
+  .btn-primary.active{background:var(--green);}
+  .btn-ghost{background:transparent; border:1px solid var(--line-strong); color:var(--ink-soft);}
+  .rate-input{display:flex; align-items:center; gap:6px;}
+  .rate-input input{
+    width:60px; padding:8px 10px; border-radius:8px;
+    border:1px solid var(--line-strong); font-size:16px;
+    background:var(--card); color:var(--ink);
+  }
+  .section-title{
+    font-size:12.5px; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.04em; color:var(--ink-faint); margin:26px 0 10px;
+  }
+  ul.ingredients{list-style:none; margin:0; padding:0;}
+  ul.ingredients li{
+    padding:8px 0; border-bottom:1px solid var(--line);
+    font-size:14.5px; display:flex; gap:10px;
+  }
+  ul.ingredients li .amt{color:var(--ink-soft); font-weight:500; min-width:70px; flex-shrink:0;}
+  ol.method{margin:0; padding-left:22px;}
+  ol.method li{padding:9px 0; font-size:14.5px; line-height:1.55;}
+  ul.notes{margin:0; padding-left:20px;}
+  ul.notes li{font-size:14px; line-height:1.55; color:var(--ink-soft); padding:5px 0;}
+  .danger-link{
+    margin-top:30px; background:none; border:none; color:var(--ink-faint);
+    font-size:13px; text-decoration:underline; cursor:pointer; padding:0;
+  }
+
+  #view-week{padding:16px 20px 32px;}
+  .week-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--card); border-radius:10px; padding:12px 14px; margin-bottom:8px;
+    border-left:4px solid var(--cat-color,var(--ink));
+  }
+  .week-item .title{font-size:14.5px; font-weight:600;}
+  .week-item .remove{background:none; border:none; color:var(--brick-dark); font-size:13px; font-weight:600; cursor:pointer; flex-shrink:0;}
+  .grocery-group h4{
+    font-size:12.5px; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.04em; color:var(--ink-faint); margin:0 0 6px;
+  }
+  .grocery-group ul{list-style:none; padding:0; margin:0 0 18px;}
+  .grocery-group li{font-size:14.5px; padding:6px 0; border-bottom:1px solid var(--line);}
+  .copy-row{display:flex; justify-content:space-between; align-items:center; margin:22px 0 4px; gap:10px;}
+
+  #view-add{padding:16px 20px 40px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:13px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+  .field input, .field select, .field textarea{
+    width:100%; padding:10px 12px; border-radius:9px;
+    border:1px solid var(--line-strong); font-size:16px; font-family:inherit;
+    background:var(--card); color:var(--ink);
+  }
+  .field textarea{min-height:64px; resize:vertical;}
+  .row2{display:flex; gap:10px;}
+  .row2 .field{flex:1;}
+  .dyn-row{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
+  .dyn-row input{flex:1;}
+  .dyn-row input.amt{flex:0 0 56px;}
+  .dyn-row input.unit{flex:0 0 66px;}
+  .dyn-remove{background:none; border:none; color:var(--ink-faint); font-size:20px; cursor:pointer; padding:0 4px;}
+  .add-row-btn{
+    background:none; border:1px dashed var(--line-strong); color:var(--ink-soft);
+    border-radius:8px; padding:9px 12px; font-size:13.5px; font-weight:500;
+    cursor:pointer; width:100%; margin-top:2px;
+  }
+  .save-bar{margin-top:24px;}
+
+  nav.bottom{
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--card); border-top:1px solid var(--line);
+    display:flex; padding-bottom:var(--safe-b); z-index:10;
+  }
+  nav.bottom button{
+    flex:1; background:none; border:none; padding:12px 4px 10px;
+    font-size:12px; font-weight:600; color:var(--ink-faint); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  nav.bottom button .dot{width:6px; height:6px; border-radius:50%; background:transparent;}
+  nav.bottom button.active{color:var(--ink);}
+  nav.bottom button.active .dot{background:var(--brick);}
+
+  #toast{
+    position:fixed; bottom: calc(84px + var(--safe-b)); left:50%;
+    transform:translateX(-50%) translateY(12px);
+    background:var(--ink); color:var(--paper);
+    padding:10px 18px; border-radius:999px; font-size:13.5px; font-weight:500;
+    opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+    z-index:20; white-space:nowrap; max-width:90vw;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  #loading{padding:80px 24px; text-align:center; color:var(--ink-faint); font-size:14.5px;}
+</style>
+</head>
+<body>
+
+<div id="loading">Loading your stable\u2026</div>
+
+<div id="app" class="hidden">
+  <header class="top">
+    <h1>The Stable</h1>
+    <span class="count" id="recipeCount"></span>
+  </header>
+
+  <section id="view-library">
+    <div class="toolbar">
+      <input class="search" id="searchBox" type="text" placeholder="Search recipes or ingredients\u2026">
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+    <div class="empty-state hidden" id="libraryEmpty">
+      <h3>Nothing here yet</h3>
+      <p>No recipes match. Try another category or clear the search.</p>
+    </div>
+  </section>
+
+  <section id="view-detail" class="hidden">
+    <button class="back" onclick="goTo('library')">Library</button>
+    <div id="detailContent"></div>
+  </section>
+
+  <section id="view-week" class="hidden">
+    <h2 style="font-size:22px;margin-bottom:14px;">This week</h2>
+    <div id="weekList"></div>
+    <div id="weekEmpty" class="empty-state hidden">
+      <h3>No meals picked yet</h3>
+      <p>Browse the stable and add a few. The grocery list builds itself from what you pick.</p>
+    </div>
+    <div id="groceryWrap" class="hidden">
+      <div class="copy-row">
+        <span class="section-title" style="margin:0;">Grocery list</span>
+        <button class="btn btn-ghost" onclick="copyGroceryList()">Copy list</button>
+      </div>
+      <div id="groceryList"></div>
+    </div>
+  </section>
+
+  <section id="view-add" class="hidden">
+    <h2 style="font-size:22px;margin-bottom:16px;">Add a recipe</h2>
+    <div style="background:var(--card);border-radius:10px;padding:14px;margin-bottom:22px;">
+      <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:10px;">
+        Sending updates to Claude? Export copies everything you've added or rated so Claude can sync.
+      </div>
+      <button class="btn btn-ghost" style="width:100%;" onclick="exportData()">Export my changes</button>
+    </div>
+    <div class="field"><label>Title</label><input type="text" id="f-title" placeholder="e.g. Miso Glazed Cod"></div>
+    <div class="row2">
+      <div class="field"><label>Category</label><select id="f-category"></select></div>
+      <div class="field"><label>Rating (0\u201310)</label><input type="number" id="f-rating" min="0" max="10" step="0.5" placeholder="optional"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Servings</label><input type="text" id="f-servings" placeholder="e.g. 2"></div>
+      <div class="field"><label>Time</label><input type="text" id="f-time" placeholder="e.g. 30 min"></div>
+    </div>
+    <div class="field"><label>Style (optional)</label><input type="text" id="f-style" placeholder="e.g. North African"></div>
+    <div class="field">
+      <label>Ingredients</label>
+      <div id="ingRows"></div>
+      <button type="button" class="add-row-btn" onclick="addIngRow()">+ Add ingredient</button>
+    </div>
+    <div class="field">
+      <label>Method</label>
+      <div id="stepRows"></div>
+      <button type="button" class="add-row-btn" onclick="addStepRow()">+ Add step</button>
+    </div>
+    <div class="field">
+      <label>Notes (one per line, optional)</label>
+      <textarea id="f-notes" placeholder="Technique notes, substitutions, storage\u2026"></textarea>
+    </div>
+    <div class="save-bar">
+      <button class="btn btn-primary" style="width:100%;padding:13px;" onclick="saveNewRecipe()">Save to the stable</button>
+    </div>
+  </section>
+</div>
+
+<div id="toast"></div>
+
+<nav class="bottom">
+  <button id="nav-library" class="active" onclick="goTo('library')"><span class="dot"></span>Library</button>
+  <button id="nav-week" onclick="goTo('week')"><span class="dot"></span>This week</button>
+  <button id="nav-add" onclick="goTo('add')"><span class="dot"></span>Add</button>
+</nav>
+
+<script>
+const SEED_VERSION = 2;
+
+const CATEGORIES = [
+  {id:'fish', label:'Fish'},
+  {id:'poultry', label:'Poultry'},
+  {id:'pork', label:'Pork'},
+  {id:'pasta', label:'Pasta'},
+  {id:'soups', label:'Soups'},
+  {id:'salads', label:'Salads'},
+  {id:'breakfast', label:'Breakfast'},
+  {id:'sauces', label:'Sauces'},
+  {id:'desserts', label:'Desserts'},
+  {id:'drinks', label:'Drinks'},
+];
+const catLabel = id => (CATEGORIES.find(c=>c.id===id)||{}).label || id;
+
+const DEFAULT_RECIPES = [{"id": "r-branzino", "title": "Chermoula Whole Branzino on Charcoal", "category": "fish", "servings": "1", "time": "~30 min active", "style": "North African", "rating": null, "source": "Drive", "ingredients": [{"amt": 1, "unit": "cup", "name": "fresh cilantro, packed"}, {"amt": 0.5, "unit": "cup", "name": "flat-leaf parsley, packed"}, {"amt": 4, "unit": null, "name": "garlic cloves"}, {"amt": 1.5, "unit": "tsp", "name": "ground cumin"}, {"amt": 1, "unit": "tsp", "name": "smoked paprika"}, {"amt": 0.5, "unit": "tsp", "name": "ground coriander"}, {"amt": 0.25, "unit": "tsp", "name": "cayenne pepper"}, {"amt": 1, "unit": null, "name": "lemon, zested and juiced"}, {"amt": 4, "unit": "tbsp", "name": "good olive oil"}, {"amt": 1, "unit": "tsp", "name": "Himalayan or sea salt"}, {"amt": 1, "unit": null, "name": "whole branzino, scaled and gutted, head on (~500-600g)"}, {"amt": 0.5, "unit": null, "name": "lemon, thinly sliced into rounds"}, {"amt": 2, "unit": null, "name": "garlic cloves, thinly sliced"}, {"amt": 4, "unit": null, "name": "fresh herb sprigs - parsley, cilantro, or both"}, {"amt": null, "unit": null, "name": "flaky salt"}, {"amt": null, "unit": null, "name": "fresh lemon wedge"}], "method": ["Make the chermoula: pulse all chermoula ingredients to a coarse, vibrant paste. Taste and adjust salt or lemon. Set aside 2 tbsp to serve alongside.", "Score and marinate: pat the branzino bone dry inside and out. Score 3 times per side, diagonal, down to the bone. Rub chermoula all over, pressing into the score marks. Stuff the cavity with lemon, garlic, and herbs plus a little chermoula. Rest at room temperature 30 minutes minimum.", "Set up the charcoal: medium-high direct heat - hold your hand 10cm above the grates for 3-4 seconds. Coals fully grey, no orange flames. Oil clean grates twice with a paper towel dipped in neutral oil.", "Grill: place diagonally, don't touch for 4-5 minutes. Test release with a thin metal spatula; if it sticks, give it 60 more seconds. Flip in one motion, cook 4-5 minutes. Done when the eye is opaque white, flesh flakes and feels firm at the thickest point, skin blistered.", "Rest 2 minutes. Flaky salt and lemon. Reserved chermoula alongside. Run a knife along the lateral line, lift the top fillet off, then lift the skeleton away in one piece."], "notes": ["May 2026 cook: grill was too hot - skin bonded and tore on the first side, second side undercooked. Hand-test before placing, spatula-release not a timer, oil the grates twice.", "Ask the fishmonger to scale and gut but leave the head on. Substitutes: red snapper, black sea bass, whole trout (most available in Ontario).", "The chermoula is a master sauce - double it. Keeps 5 days; works on chicken thighs, roasted veg, grain bowls, eggs.", "Score marks are non-negotiable - without them the thick end near the head cooks slower than the tail.", "Cherry tomatoes or artichoke hearts go straight on the grate alongside for a zero-effort side."], "keeper": true, "needsFix": false}, {"id": "r-salmon-miso", "title": "Brown Butter Miso Salmon with Shallots & Lemon", "category": "fish", "servings": "1", "time": "~20 min", "style": "Japanese-leaning", "rating": null, "source": "Drive", "ingredients": [{"amt": 1, "unit": null, "name": "salmon fillet, skin-on (~180g)"}, {"amt": 2, "unit": "tbsp", "name": "unsalted butter, divided"}, {"amt": 1, "unit": "tsp", "name": "olive oil"}, {"amt": 1, "unit": null, "name": "shallot, finely minced"}, {"amt": 1, "unit": "tbsp", "name": "white miso paste"}, {"amt": 3, "unit": "tbsp", "name": "dry white wine"}, {"amt": 1, "unit": "tsp", "name": "fresh lemon juice"}, {"amt": 0.5, "unit": "tsp", "name": "olive oil (finishing)"}, {"amt": 1, "unit": "tbsp", "name": "flat-leaf parsley, roughly chopped"}, {"amt": null, "unit": null, "name": "salt and black pepper"}], "method": ["Pat the salmon completely dry, season both sides, rest at room temperature while you start the sauce.", "Sweat the shallots: olive oil plus 1 tbsp butter over medium; add shallot with a pinch of salt; 3-4 minutes to soft and translucent.", "Brown the butter: add the second tbsp, swirl until the foam subsides and golden-brown solids form and it smells nutty - pull off the heat immediately. 2-3 minutes, moves fast at the end.", "Whisk in the miso off the heat until fully dissolved. It looks broken at first; keep whisking.", "Deglaze: back to medium, add wine, scrape the fond, reduce about 2 minutes until it coats a spoon.", "Sear: move sauce aside, wipe the pan edge, medium-high, splash of oil. Skin-side down, press 10 seconds. 3-4 minutes until skin is crispy and flesh is opaque two-thirds up. Flip, 60-90 seconds.", "Rest 1 minute. Stir lemon juice and finishing oil into the sauce, adjust salt. Sauce on the plate first, salmon on top skin-side up, parsley to finish."], "notes": ["Proven repeat - one of the dishes that keeps earning its slot in the week.", "Don't burn the butter - have the miso ready the moment it turns amber.", "Dry salmon means crispy skin. Surface moisture steams instead of sears.", "Sauce too thick? Few drops warm water. Too thin? 30 more seconds.", "Wine sub: dry sherry, or white wine vinegar diluted with water.", "The brown butter miso base works on any white fish, chicken breast, or through pasta."], "keeper": true, "needsFix": false}, {"id": "r-trout-spice", "title": "Pan-Seared Trout with Cumin-Coriander Spice Paste", "category": "fish", "servings": "1", "time": "~15 min", "style": "Baharat-adjacent", "rating": null, "source": "Sep 2026 chat", "ingredients": [{"amt": 1, "unit": null, "name": "skin-on trout fillet"}, {"amt": 1, "unit": "tsp", "name": "ground cumin"}, {"amt": 1, "unit": "tsp", "name": "ground coriander"}, {"amt": 0.5, "unit": "tsp", "name": "smoked paprika"}, {"amt": 1, "unit": null, "name": "garlic clove, grated"}, {"amt": 1.5, "unit": "tbsp", "name": "olive oil"}, {"amt": 0.5, "unit": "tsp", "name": "sumac, to finish"}, {"amt": 1, "unit": null, "name": "lemon or lime wedge"}, {"amt": null, "unit": null, "name": "black pepper"}], "method": ["Mix the spices, garlic, and olive oil into a loose paste. Pat the fillet bone dry; paste the flesh side only, leave the skin clean and dry.", "HOT pan start. Get the pan properly hot before the fish goes in - this is the corrected method.", "Lay the fillet skin-side down and press flat immediately with a fish spatula for 15-20 seconds so the whole skin stays in contact.", "Read doneness by the opacity line rising through the flesh, not by a timer.", "Minimize or skip the flip entirely - a thin trout fillet finishes on the skin side.", "Off the pan, sumac over the top and a squeeze of citrus."], "notes": ["Method correction, Sep 2026: the first attempt used a cold-pan start and failed - skin never crisped, extended cook time overcooked the fish. Cold-pan start is for fatty poultry skin only.", "The spice flavour landed well. It was purely a heat-management failure.", "Hot-pan + press-flat + opacity line applies to salmon and branzino fillets too.", "No added salt version - the spice load and the acid finish carry it."], "keeper": false, "needsFix": true}, {"id": "r-salmon-tahini", "title": "Crispy-Skin Salmon with Tahini-Lime Drizzle", "category": "fish", "servings": "1", "time": "~15 min", "style": "Levantine-leaning", "rating": null, "source": "Sep 2026 chat", "ingredients": [{"amt": 1, "unit": null, "name": "salmon fillet, skin-on"}, {"amt": 1, "unit": "tbsp", "name": "tahini"}, {"amt": 1, "unit": "tbsp", "name": "water"}, {"amt": 0.5, "unit": null, "name": "lime, juiced"}, {"amt": 1, "unit": null, "name": "small garlic clove, grated"}, {"amt": null, "unit": null, "name": "black pepper"}, {"amt": null, "unit": null, "name": "neutral oil, for the pan"}], "method": ["Pat the skin completely dry. Score lightly to prevent curling.", "Hot pan, thin film of oil. Skin-side down, press flat, don't move it.", "Flip briefly at the end. Pull at 120-125°F internal.", "Whisk tahini with water until it loosens (it seizes before it thins - keep going), then lime juice, grated garlic, black pepper.", "Order of operations: sear, lime squeezed on the flesh out of the pan, drizzle over the top, optional pinch of salt at the very end."], "notes": ["Low-sodium build - the acid and the sesame richness do the work salt usually does.", "Thin the drizzle with extra water a few drops at a time; it should ribbon, not sit."], "keeper": false, "needsFix": false}, {"id": "r-salmon-lowsodium", "title": "Low-Sodium Miso-Ginger Salmon with Roasted Carrots & Broccoli", "category": "fish", "servings": "1", "time": "~35 min", "style": "Pan-Asian", "rating": null, "source": "Aug 2026 chat", "ingredients": [{"amt": 1, "unit": null, "name": "skinless salmon fillet"}, {"amt": 1, "unit": "tsp", "name": "fresh ginger, grated"}, {"amt": 1, "unit": null, "name": "garlic clove, grated"}, {"amt": 0.25, "unit": "tsp", "name": "white pepper"}, {"amt": 2, "unit": "tsp", "name": "rice vinegar"}, {"amt": 1, "unit": "tsp", "name": "toasted sesame oil"}, {"amt": 1, "unit": "tbsp", "name": "tahini"}, {"amt": 1, "unit": "tbsp", "name": "water"}, {"amt": 0.5, "unit": null, "name": "lime, juiced"}, {"amt": 0.5, "unit": "tsp", "name": "raw honey"}, {"amt": null, "unit": null, "name": "za'atar or sumac, to finish"}, {"amt": 2, "unit": null, "name": "carrots, cut on the bias"}, {"amt": 2, "unit": "cup", "name": "broccoli florets"}, {"amt": 1, "unit": "tbsp", "name": "olive oil"}], "method": ["Marinade with no salty condiments: ginger, garlic, white pepper, rice vinegar, sesame oil. Coat the fillet.", "Marinate 20 minutes maximum - any longer and the vinegar starts working on the flesh.", "Roast carrots and broccoli at 425°F with olive oil until the edges genuinely char.", "Pat the salmon dry before it hits the pan or the marinade moisture will stop it browning.", "Sear hot, pull on the low side of done.", "Tahini-lime sauce: tahini, water, lime juice, honey, grated garlic. Drizzle over. Za'atar or sumac at the end.", "If it needs salt, a very small pinch at plating does more than salt in the marinade would have."], "notes": ["Built with zero salty condiments anywhere in the dish - miso, aminos, and fish sauce all dropped.", "Lime instead of lemon by choice - it holds up better against the sesame."], "keeper": false, "needsFix": false}, {"id": "r-haddock-achiote", "title": "Achiote & Citrus Haddock (Tikin Xic style)", "category": "fish", "servings": "1", "time": "~35 min", "style": "Yucatecan", "rating": null, "source": "Jun 2026 chat", "ingredients": [{"amt": 1, "unit": null, "name": "haddock fillet"}, {"amt": 2, "unit": "tbsp", "name": "achiote paste"}, {"amt": 3, "unit": "tbsp", "name": "bitter orange juice (or orange + lime)"}, {"amt": 0.5, "unit": "tsp", "name": "ground cumin"}, {"amt": 0.5, "unit": "tsp", "name": "dried Mexican oregano"}, {"amt": 2, "unit": null, "name": "garlic cloves"}, {"amt": 0.5, "unit": null, "name": "red onion, thinly sliced"}, {"amt": 3, "unit": "tbsp", "name": "lime juice, for the onions"}, {"amt": 1, "unit": null, "name": "habanero"}, {"amt": null, "unit": null, "name": "banana leaf or foil, for wrapping"}], "method": ["Loosen the achiote paste with the citrus juice, cumin, oregano, and garlic into a pourable marinade.", "Fold any thin tail end of the fillet under before wrapping so the parcel is one even thickness. This is the fix for the last cook.", "Wrap in banana leaf (or foil with cilantro stems tucked in as a substitute) and bake.", "Pull the parcel at 15 minutes and check. Target 125-130°F internal - no higher.", "Quick-pickle the red onion in lime juice with a sliced habanero while the fish cooks.", "Serve with the pickled onion and habanero salsa."], "notes": ["FAILED on first cook - overcooked. Not a recipe problem, a temperature problem. Flagged for a retry.", "Two corrections for next time: fold the tail end under for even thickness, and pull the parcel at 15 min to check rather than trusting the full bake time.", "Achiote paste is the one hard-to-substitute item - Latin grocery if the regular store doesn't carry it."], "keeper": false, "needsFix": true}, {"id": "r-ca-kho", "title": "Ca Kho - Vietnamese Caramel-Braised Haddock", "category": "fish", "servings": "1", "time": "~45 min", "style": "Vietnamese", "rating": null, "source": "Jun 2026 chat", "ingredients": [{"amt": 1, "unit": null, "name": "haddock fillet"}, {"amt": 3, "unit": "tbsp", "name": "granulated sugar"}, {"amt": 2, "unit": "tbsp", "name": "water"}, {"amt": 1.5, "unit": "tbsp", "name": "fish sauce"}, {"amt": 1, "unit": null, "name": "shallot, sliced"}, {"amt": 3, "unit": null, "name": "garlic cloves, sliced"}, {"amt": 0.5, "unit": "cup", "name": "coconut water or plain water"}, {"amt": null, "unit": null, "name": "black pepper, coarse"}, {"amt": null, "unit": null, "name": "green onion, sliced"}, {"amt": 50, "unit": "g", "name": "pork belly, diced (optional but recommended)"}, {"amt": 1, "unit": "tsp", "name": "salt, for the cure"}], "method": ["Salt-cure the haddock 15 minutes to firm the flesh, then rinse and pat dry. Lean white fish needs the structural help.", "Make nuoc mau: sugar and water in a dry pan over medium. SWIRL, do not stir. Take it to a deep amber-mahogany, then kill the heat with the liquid.", "If using pork belly, render it first and build the caramel in that fat.", "Build the braise: shallot, garlic, fish sauce, coconut water into the caramel. Reduce to a glossy, finished sauce BEFORE the fish goes in - this is the inversion that lean haddock requires.", "Add the haddock late. Short baste-braise, spooning sauce over. Pull at 125-130°F.", "Coarse black pepper and green onion to finish."], "notes": ["Sauce-first inversion: traditional kho fish (catfish, mackerel) can sit in a reducing sauce. Haddock cannot - it'll be chalk by the time the sauce is right.", "Honey will not substitute for granulated sugar in nuoc mau. It scorches.", "Pork belly compensates for the fat lean haddock can't bring against a bittersweet caramel.", "Flagged for a lower-sodium rework - this is the dish most affected by the DASH shift."], "keeper": false, "needsFix": false}, {"id": "r-chermoula-marinade", "title": "Chermoula Marinade for Chicken Thighs", "category": "poultry", "servings": "6-8 bone-in thighs", "time": "10 min + 4-24 hr marinade", "style": "North African", "rating": null, "source": "Jun 2026 chat", "ingredients": [{"amt": 0.5, "unit": "cup", "name": "olive oil"}, {"amt": 0.25, "unit": "cup", "name": "lemon juice (about 2 lemons)"}, {"amt": 1, "unit": null, "name": "lemon, zested"}, {"amt": 1, "unit": "cup", "name": "cilantro, roughly chopped (stems fine)"}, {"amt": 0.5, "unit": "cup", "name": "parsley, roughly chopped"}, {"amt": 4, "unit": null, "name": "garlic cloves"}, {"amt": 1.5, "unit": "tsp", "name": "ground cumin"}, {"amt": 1, "unit": "tsp", "name": "sweet paprika"}, {"amt": 0.5, "unit": "tsp", "name": "smoked paprika"}, {"amt": 0.375, "unit": "tsp", "name": "cayenne or Aleppo pepper"}, {"amt": 1, "unit": "tsp", "name": "kosher salt"}], "method": ["Blitz everything to a coarse, spoonable paste - not a smooth puree, you want texture.", "Taste. It should be aggressively bright and a little salty, since it dilutes once it hits the chicken.", "Score the skin with a few shallow slashes so the marinade penetrates rather than sitting on top.", "Coat thoroughly, working some under the skin.", "Minimum 4 hours, ideally overnight. The acid here is moderate enough that it holds at 24 hours on skin-on thighs.", "Out of the fridge 30-40 min before grilling.", "Grill skin-side down first to render and crisp. Hand-test for heat before placing; spatula-release, not a timer, to know when to flip. Finish over lower heat so the herbs don't scorch."], "notes": ["Confirmed delicious - made for family, repeat-worthy.", "Boneless/skinless variation: cap the marinade at 8-12 hours, since the acid sits directly on exposed meat. Skip the skin-scoring and the skin-side render. Pat dry before cooking.", "Avocado oil substitutes 1:1 for olive oil. No parsley? Increase the cilantro and keep the zest unscaled.", "Dial cayenne to the low end if the sides are already acidic or spicy - let the chicken be the savoury-bright anchor."], "keeper": true, "needsFix": false}, {"id": "r-chermoula-thighs-potatoes", "title": "Chermoula Roast Chicken Thighs with Crispy Smashed Potatoes", "category": "poultry", "servings": "2", "time": "~50 min", "style": "North African", "rating": null, "source": "Jun 2026 chat", "ingredients": [{"amt": 4, "unit": null, "name": "bone-in skin-on chicken thighs"}, {"amt": 1, "unit": "batch", "name": "chermoula marinade (see separate recipe)"}, {"amt": 1, "unit": null, "name": "preserved lemon, finely chopped"}, {"amt": 600, "unit": "g", "name": "baby potatoes"}, {"amt": 3, "unit": "tbsp", "name": "olive oil"}, {"amt": null, "unit": null, "name": "Himalayan salt"}, {"amt": null, "unit": null, "name": "black pepper"}], "method": ["Marinate the thighs in chermoula with the chopped preserved lemon, overnight if possible.", "Boil the baby potatoes until a knife slides in, then drain and let them steam dry.", "Smash each one flat with the base of a glass. Oil generously, season.", "Roast the potatoes at 425°F until the edges are genuinely crisp, turning once.", "Roast the thighs skin-side up on a rack until the skin is deep gold and the meat reads 180-185°F. Dark meat wants the collagen to break down - don't pull it early.", "Spoon over reserved raw chermoula at the table."], "notes": ["No preserved lemon? Quick-pickle lemon zest with salt for 20 minutes as a substitute.", "Hands-off after the first 10 minutes - a good weeknight-for-effort payoff."], "keeper": false, "needsFix": false}, {"id": "r-chicken-breast-drybrine", "title": "Smoky Chile Dry-Brined Chicken Breast, Cast Iron", "category": "poultry", "servings": "1", "time": "~20 min + 30-40 min brine", "style": "Method, not a recipe", "rating": null, "source": "Jul 2026 chat", "ingredients": [{"amt": 1, "unit": null, "name": "boneless skinless chicken breast"}, {"amt": 1.5, "unit": "tsp", "name": "smoky chile salt (or any salt-forward rub)"}, {"amt": 1, "unit": "tbsp", "name": "neutral oil or ghee"}, {"amt": 1, "unit": "tbsp", "name": "butter, for basting"}], "method": ["Even thickness first - pound the thick end or butterfly. Non-negotiable on a lean cut.", "Dry brine 30-40 minutes minimum ahead with a salt-forward rub. The rub contents are interchangeable; the salt and the timing are the recipe.", "Preheat cast iron fully. It has to hold its temperature against a cold cut or you get steam instead of crust.", "Sear undisturbed for a real Maillard crust.", "Baste in fat for the last minute.", "Pull at ~150°F and rest to ~155 on carryover. Low-end doneness."], "notes": ["Confirmed keeper. Dry brine contents are interchangeable - the method is the recipe.", "Transferable frame: even thickness + salt ahead + a pan that stays hot + low-end pull. Seasoning is the only variable."], "keeper": true, "needsFix": false}, {"id": "r-thighs-scallion-ginger", "title": "Crispy-Skin Chicken Thighs with Scallion-Ginger Oil", "category": "poultry", "servings": "2", "time": "~35 min", "style": "Cantonese-leaning", "rating": null, "source": "Jul 2026 chat", "ingredients": [{"amt": 4, "unit": null, "name": "bone-in skin-on chicken thighs"}, {"amt": 4, "unit": null, "name": "scallions, finely sliced"}, {"amt": 2, "unit": "tbsp", "name": "fresh ginger, finely minced"}, {"amt": 0.25, "unit": "cup", "name": "neutral oil"}, {"amt": 0.5, "unit": "tsp", "name": "white pepper"}, {"amt": null, "unit": null, "name": "Himalayan salt"}, {"amt": 1, "unit": "tbsp", "name": "coconut aminos"}, {"amt": 1, "unit": "tsp", "name": "rice vinegar"}], "method": ["Pat the skin dry and salt it. COLD pan start, skin-side down, thin film of oil - then bring the heat up to medium. Cold start is for fatty poultry skin only.", "Render undisturbed 8-12 minutes. You'll hear steady sizzle as water and fat leave the skin. The skin releases itself when it's ready.", "Press gently with a spatula for the first couple of minutes so the whole skin renders evenly.", "Pour off pooling fat as it accumulates - a fat pool steams the edges. Save it.", "Flip only when the skin is deep golden and crisp. Finish flesh-side down to 180-185°F.", "Pile minced scallion and ginger with white pepper and salt in a heatproof bowl. Heat the neutral oil until it just smokes and pour it over - the bloom is the dish's second heat event.", "Mix the aminos and rice vinegar separately and spoon it around the plate, not over the fish or chicken. Keep the crispy skin above the sauce."], "notes": ["Cold-pan start renders fat gradually instead of letting the skin seize and grip. Single biggest lever on chicken skin.", "Same split works on trout: aromatics and hot oil on top, aminos mixture around rather than over."], "keeper": false, "needsFix": false}, {"id": "r-chicken-brine-24", "title": "24-Hour Chicken Breast Brine", "category": "poultry", "servings": "1 breast (6-8 oz)", "time": "24 hr", "style": "Pan-Asian umami", "rating": null, "source": "Jul 2026 chat", "ingredients": [{"amt": 2, "unit": "cup", "name": "water"}, {"amt": 1.5, "unit": "tbsp", "name": "kosher salt"}, {"amt": 1, "unit": "tbsp", "name": "fish sauce"}, {"amt": 2, "unit": "tbsp", "name": "coconut aminos"}, {"amt": 1, "unit": "tbsp", "name": "raw honey"}, {"amt": 3, "unit": null, "name": "garlic cloves, smashed"}, {"amt": 1, "unit": "tbsp", "name": "fresh ginger, sliced"}, {"amt": 1, "unit": null, "name": "lemongrass stalk, bruised"}, {"amt": 0.5, "unit": "tsp", "name": "white pepper"}], "method": ["Dissolve the salt and honey in the water, then add everything else.", "Submerge the breast. Refrigerate 24 hours - this is the hard ceiling regardless of concentration.", "No acid in the brine. Acid over this duration turns the surface spongy.", "Pat completely dry before searing or you lose the crust.", "Any brightness goes on after cooking, off heat - lime juice at the end."], "notes": ["Salinity is deliberately reduced (1.5 tbsp per 2 cups) because of the long soak. Standard brine concentration degrades breast texture past 12 hours.", "Past 24 hours the texture goes spongy no matter what. Hard stop."], "keeper": false, "needsFix": false}, {"id": "r-chipotle-honey-tacos", "title": "Chipotle-Honey Chicken Braise for Tacos", "category": "poultry", "servings": "2-3", "time": "~60 min", "style": "Mexican", "rating": null, "source": "Aug 2026 chat", "ingredients": [{"amt": 0.82, "unit": "lb", "name": "boneless chicken thighs"}, {"amt": 2, "unit": "tbsp", "name": "chipotle in adobo, chopped"}, {"amt": 1.5, "unit": "tbsp", "name": "raw honey"}, {"amt": 1, "unit": null, "name": "red onion"}, {"amt": 1, "unit": null, "name": "green bell pepper"}, {"amt": 1, "unit": null, "name": "red bell pepper"}, {"amt": 2, "unit": null, "name": "Thai chiles"}, {"amt": 3, "unit": null, "name": "green onion, sliced"}, {"amt": null, "unit": null, "name": "cilantro"}, {"amt": 2, "unit": null, "name": "lime"}, {"amt": 1, "unit": "cup", "name": "cherry tomatoes"}, {"amt": 0.5, "unit": "cup", "name": "feta, crumbled"}, {"amt": 1, "unit": "tsp", "name": "ground cumin"}, {"amt": 1, "unit": "tsp", "name": "smoked paprika"}, {"amt": 0.5, "unit": "cup", "name": "chicken stock"}, {"amt": null, "unit": null, "name": "corn tortillas"}], "method": ["Quick-pickle sliced red onion in lime juice. Mise everything else.", "Sear the thighs hard in a heavy pan. Remove.", "Bloom the dry spices and the chipotle in the fat - this is where the depth comes from.", "Add the honey AFTER searing, never before, or it turns bitter under high heat.", "Deglaze with stock, scraping the fond.", "Bare simmer, ~35 minutes. Thighs need to go well past normal pull temp into the collagen-melt zone - the opposite instinct from everything else you cook.", "Char the cherry tomatoes separately in cast iron with Thai chile into a relish. Keeping them out of the braise preserves brightness and contrast.", "Shred the chicken, reduce the braising liquid, recombine.", "Lime and final salt correction only after the braise is done."], "notes": ["Stovetop beats the pressure cooker here - a small sugary honey-adobo batch scorches under pressure.", "Pressure cook time doesn't scale down with batch size. Thickness governs doneness, not total mass.", "Feta outperforms cheddar against this flavour profile."], "keeper": false, "needsFix": false}, {"id": "r-chicken-salad-3day", "title": "Three-Day Chicken Salad", "category": "poultry", "servings": "3", "time": "~30 min", "style": "Meal prep", "rating": null, "source": "Sep 2026 chat", "ingredients": [{"amt": 2, "unit": null, "name": "boneless skinless chicken breasts"}, {"amt": 0.5, "unit": "cup", "name": "Greek yogurt"}, {"amt": 2, "unit": "tbsp", "name": "mayonnaise"}, {"amt": 1, "unit": "tsp", "name": "white miso paste"}, {"amt": 1, "unit": "tsp", "name": "Dijon mustard"}, {"amt": 2, "unit": null, "name": "celery stalks, finely diced"}, {"amt": 0.25, "unit": null, "name": "red onion, finely diced"}, {"amt": 0.33, "unit": "cup", "name": "walnuts, toasted and chopped"}, {"amt": 2, "unit": "tbsp", "name": "fresh dill, chopped"}, {"amt": 1, "unit": null, "name": "lemon"}, {"amt": null, "unit": null, "name": "black pepper"}], "method": ["Sear the chicken breasts, rest, then dice or shred.", "Whisk the binder: yogurt, mayo, miso, Dijon, black pepper.", "Fold in chicken, celery, red onion, toasted walnuts, dill.", "Portion into three containers.", "Hold the lemon juice and zest back. Add it fresh to each portion at the moment of serving."], "notes": ["The withheld-lemon move is the whole point - acid added on day one goes flat by day three.", "Miso is the umami compensation for how lean breast meat is. Between the miso and the Dijon there's enough sodium that extra salt at finishing is optional.", "Swap walnuts for toasted almonds or sunflower seeds across the week for variety."], "keeper": false, "needsFix": false}, {"id": "r-turkey-larb", "title": "Turkey Larb", "category": "poultry", "servings": "2", "time": "~25 min", "style": "Thai/Lao", "rating": 7, "source": "Jul 2026 chat", "ingredients": [{"amt": 0.5, "unit": "lb", "name": "ground turkey"}, {"amt": 2, "unit": "tbsp", "name": "jasmine rice, for khao khua"}, {"amt": 2, "unit": "tbsp", "name": "fish sauce"}, {"amt": 2, "unit": null, "name": "lime, juiced"}, {"amt": 2, "unit": null, "name": "shallots, thinly sliced"}, {"amt": 3, "unit": null, "name": "green onions, sliced"}, {"amt": 0.5, "unit": "cup", "name": "fresh mint leaves"}, {"amt": 0.5, "unit": "cup", "name": "cilantro, chopped"}, {"amt": 1, "unit": "tsp", "name": "chile flakes"}, {"amt": 0.5, "unit": "tsp", "name": "raw honey or palm sugar"}, {"amt": 3, "unit": "tbsp", "name": "water, for poaching"}, {"amt": null, "unit": null, "name": "basmati rice, to serve"}], "method": ["Toast the jasmine rice in a dry pan until deep golden, then grind to a coarse powder (khao khua). Jasmine is the right choice here - it's more aromatic than basmati.", "Prep all raw aromatics before the meat goes in.", "Cook the turkey at medium with a splash of water to poach the crumb tender. Do NOT dry-fry - that's a fatty-pork-larb technique and it turns lean turkey grainy.", "Stop when the pan goes dry and the meat just begins to catch. 165°F is non-negotiable for ground poultry.", "Dress and fold OFF the heat: fish sauce, lime, honey, chile, then the herbs and shallots.", "Serve over basmati. Push lime and fish sauce up by about a third to compensate for the rice muting it. Cook the rice on the dry side."], "notes": ["7/10 - below the 7.5 line, but earns a monthly weeknight slot on effort-to-cost ratio.", "Diagnosis on the gap: under-acid, most likely. Larb's home failure mode is always not enough lime. Taste it with a spoonful of rice before deciding it's seasoned.", "The real ceiling is the turkey. Lean ground turkey is a texture carrier, not a flavour source. Ground pork or hand-chopped dark-meat chicken would change the dish's floor, not just its ceiling.", "Rice split that worked: jasmine for the toasted powder, basmati as the bed. Basmati is drier and dilutes the dressing less."], "keeper": false, "needsFix": true}, {"id": "r-turkey-burgers", "title": "Juicy Turkey Burgers", "category": "poultry", "servings": "2 quarter-pounders", "time": "~30 min incl. rest", "style": "Method-driven", "rating": null, "source": "Sep 2026 chat", "ingredients": [{"amt": 0.5, "unit": "lb", "name": "ground turkey"}, {"amt": 3, "unit": "tbsp", "name": "panko"}, {"amt": 2, "unit": "tbsp", "name": "unsalted broth"}, {"amt": 0.25, "unit": null, "name": "onion (red works), grated"}, {"amt": 1, "unit": null, "name": "garlic clove, grated"}, {"amt": 1, "unit": "tbsp", "name": "olive oil"}, {"amt": 1, "unit": "tsp", "name": "mushroom powder"}, {"amt": 0.5, "unit": "tsp", "name": "smoked paprika"}, {"amt": null, "unit": null, "name": "black pepper"}], "method": ["Make a panade: soak the panko in the broth until it's a paste. This is the juiciness mechanism.", "Grate the onion rather than dicing - you want the moisture in the mix, not chunks. Red onion works; the sharpness mellows in the pan. Rinse it first for a milder result.", "Combine everything with a light hand. Overmixing makes it dense and rubbery.", "Form two patties and press a thumb dimple in the centre of each so they don't dome.", "Rest in the fridge 15-20 minutes before cooking.", "Cook to 165°F - food safety, not preference, on ground poultry.", "Finish with something bright and acidic on top."], "notes": ["Same principle as the larb: ground turkey is a texture carrier. Fat has to come back in (olive oil), umami has to be added (mushroom powder), and acid has to finish it.", "Mushroom powder over salt-heavy umami sources, and unsalted broth for the panade."], "keeper": false, "needsFix": false}, {"id": "r-rib-rub", "title": "Amchur & Smoked Paprika Rib Rub", "category": "pork", "servings": "1 full rack", "time": "10 min + overnight", "style": "Cross-cultural BBQ", "rating": 9, "source": "May 2026 chat", "ingredients": [{"amt": 2, "unit": "tsp", "name": "smoked paprika"}, {"amt": 1.5, "unit": "tsp", "name": "Himalayan salt"}, {"amt": 1, "unit": "tsp", "name": "black pepper, coarsely ground"}, {"amt": 1, "unit": "tsp", "name": "garlic powder"}, {"amt": 1, "unit": "tsp", "name": "onion powder"}, {"amt": 1, "unit": "tsp", "name": "amchur (dried mango powder)"}, {"amt": 0.75, "unit": "tsp", "name": "cumin, toasted & ground"}, {"amt": 0.75, "unit": "tsp", "name": "coriander, toasted & ground"}, {"amt": 0.5, "unit": "tsp", "name": "brown sugar"}, {"amt": 0.25, "unit": "tsp", "name": "cayenne"}, {"amt": null, "unit": null, "name": "yellow mustard or olive oil, as binder"}], "method": ["Toast cumin and coriander in a dry pan, 60 seconds.", "Combine everything and mix well.", "Thin binder of yellow mustard or olive oil over both sides of the rack.", "Press the rub on generously - press to adhere, don't rub aggressively.", "Uncovered on a rack over a sheet pan. Refrigerate overnight, 8 hours minimum."], "notes": ["9/10 with the sauce and process. Best ribs to date. Hosting-grade.", "Amchur replaces sugar as the acid and brightness anchor - all the caramelization, none of the sweetness taking over.", "Uncovered in the fridge dries the surface. That's what makes the bark."], "keeper": true, "needsFix": false}, {"id": "r-rib-sauce", "title": "Tamarind-Pomegranate BBQ Sauce", "category": "sauces", "servings": "1 rack, generously", "time": "~25 min", "style": "Middle Eastern BBQ", "rating": 9, "source": "May 2026 chat", "ingredients": [{"amt": 3, "unit": "tbsp", "name": "tomato paste"}, {"amt": 2, "unit": "tbsp", "name": "tamarind concentrate"}, {"amt": 3, "unit": "tbsp", "name": "pomegranate molasses"}, {"amt": 2, "unit": "tbsp", "name": "apple cider vinegar"}, {"amt": 1, "unit": "tbsp", "name": "raw honey"}, {"amt": 1, "unit": "tbsp", "name": "Worcestershire sauce"}, {"amt": 3, "unit": null, "name": "garlic cloves, minced"}, {"amt": 1, "unit": "tsp", "name": "fresh ginger, grated"}, {"amt": 1, "unit": "tsp", "name": "smoked paprika"}, {"amt": 0.25, "unit": "tsp", "name": "amchur"}, {"amt": 0.25, "unit": "tsp", "name": "cayenne"}, {"amt": 0.5, "unit": "tsp", "name": "Himalayan salt"}, {"amt": 0.5, "unit": "cup", "name": "water"}], "method": ["Splash of olive oil over medium. Sweat garlic and ginger 2 minutes - fragrant, not coloured.", "Add tomato paste, cook out 2 minutes stirring constantly.", "Everything else in. Stir to combine.", "Low simmer uncovered 15-20 minutes until it coats the back of a spoon.", "Taste: more molasses for depth, more vinegar for brightness.", "Cool before using."], "notes": ["Tamarind and amchur double up on sourness from different angles. Built to complement the rub, not compete with it.", "Make the morning of or the day before - it improves overnight."], "keeper": true, "needsFix": false}, {"id": "r-ribs-oven", "title": "Oven Baby Back Ribs - Cook Process", "category": "pork", "servings": "1 rack", "time": "4.5-5 hr at 275°F", "style": "Low and slow", "rating": 9, "source": "May 2026 chat", "ingredients": [{"amt": 1, "unit": "rack", "name": "baby back ribs, rubbed overnight"}, {"amt": 3, "unit": "tbsp", "name": "apple juice or beer, for the wrap"}, {"amt": null, "unit": null, "name": "tamarind-pomegranate BBQ sauce (see separate recipe)"}], "method": ["Phase 1 - unwrapped, 2 hours. Ribs out of the fridge 30-40 min ahead. Oven to 275°F, middle rack. Pat dry, check rub coverage. Bone-side down on a wire rack over a foil-lined sheet pan. Uncovered, 2 hours.", "Phase 2 - wrapped, 1.5 hours. Bark should be deep reddish-brown and set. Bone-side up on a double layer of foil, 2-3 tbsp apple juice or beer added before sealing. Wrap tight. Back in, 1.5 hours.", "Phase 3 - bark recovery and sauce, 45-60 min. Unwrap, discard foil and liquid. Bone-side down on the rack, uncovered. At 20-25 min, brush the first thin layer of sauce. 10 minutes later, second thin layer. Continue 10-15 min until glossy and caramelized.", "Doneness: bones pulled back about a quarter inch; the rack bends noticeably when lifted from one end.", "Rest uncovered on the rack 10-15 minutes. Cut between the bones."], "notes": ["9/10 - best ribs to date, and with very little sugar.", "Charcoal alternative: 225-250°F indirect the whole way, cherry wood.", "Full hosting set: ribs plus the freekeh tabbouleh and the Mediterranean fusilli pasta salad. Rub the night before, sauce and both salads the day before. Only day-of work is the cook itself."], "keeper": true, "needsFix": false}, {"id": "r-pork-chop-marinade", "title": "Low-Sodium Umami Pork Chop Marinade", "category": "pork", "servings": "per 6 oz chop", "time": "5 min + 2-4 hr", "style": "DASH-adapted pan-Asian", "rating": 10, "source": "Sep 2026 chat", "ingredients": [{"amt": 1, "unit": "tbsp", "name": "coconut aminos"}, {"amt": 1, "unit": "tsp", "name": "toasted sesame oil"}, {"amt": 1, "unit": "tsp", "name": "neutral oil"}, {"amt": 1, "unit": "tsp", "name": "raw honey"}, {"amt": 1, "unit": "tsp", "name": "fresh ginger, grated"}, {"amt": 1.5, "unit": null, "name": "garlic cloves, grated"}, {"amt": 0.5, "unit": "tsp", "name": "mushroom powder or ground dried shiitake"}, {"amt": null, "unit": null, "name": "black pepper, fresh cracked"}, {"amt": 1, "unit": "pinch", "name": "five-spice or smoked paprika"}, {"amt": 0.5, "unit": null, "name": "lime, to finish"}], "method": ["Whisk to a paste.", "Coat the chops, marinate 2-4 hours. Bone-in chops handle more time than fish but don't need the tenderloin's 24 hours.", "Pat dry before searing or you won't get real browning.", "Sear hot, pull at 135-140°F for a juicy medium.", "Squeeze of lime post-cook - the acid goes on after, not into the soak."], "notes": ["10/10. Top of the pork chop marinade list.", "The mushroom powder is the move - umami depth with no sodium cost. Coconut aminos is the only salt in the build and it's a controlled single tablespoon."], "keeper": true, "needsFix": false}, {"id": "r-pork-tenderloin-miso", "title": "Miso-Ginger Pork Tenderloin Marinade (24-hour)", "category": "pork", "servings": "~1 lb tenderloin", "time": "5 min + 24 hr", "style": "Pan-Asian", "rating": 10, "source": "Jun 2026 chat", "ingredients": [{"amt": 2, "unit": "tbsp", "name": "white miso"}, {"amt": 2, "unit": "tbsp", "name": "coconut aminos"}, {"amt": 1, "unit": "tbsp", "name": "toasted sesame oil"}, {"amt": 1, "unit": "tbsp", "name": "neutral oil"}, {"amt": 1, "unit": "tbsp", "name": "raw honey"}, {"amt": 1, "unit": "tbsp", "name": "fresh ginger, grated"}, {"amt": 2.5, "unit": null, "name": "garlic cloves, grated"}, {"amt": 1, "unit": "tsp", "name": "fish sauce"}, {"amt": null, "unit": null, "name": "white pepper"}], "method": ["Whisk to a clinging paste - it should coat, not run.", "Coat the tenderloin and vacuum-seal for the full 24 hours.", "No acid in the marinade. Miso enzymes handle the tenderizing gently; acid at this duration wrecks the surface of a lean cut.", "Dry the surface thoroughly before searing.", "Any acid - lime juice or rice vinegar - goes on post-cook."], "notes": ["10/10. Go-to pork tenderloin marinade.", "Higher sodium than the current DASH direction. Worth reworking with the mushroom-powder approach from the pork chop marinade if you want a lower-sodium version."], "keeper": true, "needsFix": false}, {"id": "r-pork-tenderloin-pom", "title": "Pomegranate Molasses & Harissa Pork Tenderloin Marinade", "category": "pork", "servings": "1 tenderloin (400-500g)", "time": "5 min + 24 hr", "style": "Middle Eastern", "rating": null, "source": "May 2026 chat", "ingredients": [{"amt": 3, "unit": "tbsp", "name": "pomegranate molasses"}, {"amt": 1, "unit": "tbsp", "name": "white miso"}, {"amt": 1, "unit": "tbsp", "name": "harissa paste"}, {"amt": 2, "unit": "tbsp", "name": "olive oil"}, {"amt": 3, "unit": null, "name": "garlic cloves, minced"}, {"amt": 1, "unit": "tsp", "name": "ground cumin"}, {"amt": 1, "unit": "tsp", "name": "smoked paprika"}, {"amt": 1, "unit": "tsp", "name": "lemon juice"}, {"amt": null, "unit": null, "name": "black pepper"}, {"amt": null, "unit": null, "name": "extra pomegranate molasses, for glazing"}], "method": ["Whisk everything together and coat the tenderloin.", "24 hours in the fridge. Miso does the tenderizing; the acid load is kept deliberately low.", "Pat completely dry before searing - the molasses sugar will burn if there's surface moisture.", "High heat for the crust, then drop the heat to finish.", "Pull at 140°F / 60°C.", "Optional: brush extra pomegranate molasses on at the end for a deeper crust."], "notes": ["Untested rating - worth logging one when you make it again."], "keeper": false, "needsFix": false}, {"id": "r-caramel-pork-bowl", "title": "Vietnamese Caramel Ground Pork Bowl", "category": "pork", "servings": "2", "time": "~35 min", "style": "Vietnamese", "rating": null, "source": "Aug 2026 chat", "ingredients": [{"amt": 0.5, "unit": "lb", "name": "ground pork"}, {"amt": 3, "unit": "tbsp", "name": "granulated sugar"}, {"amt": 2, "unit": "tbsp", "name": "water"}, {"amt": 1.5, "unit": "tbsp", "name": "fish sauce"}, {"amt": 2, "unit": null, "name": "shallots, minced"}, {"amt": 3, "unit": null, "name": "garlic cloves, minced"}, {"amt": null, "unit": null, "name": "black pepper, coarse"}, {"amt": 3, "unit": null, "name": "green onions, sliced"}, {"amt": null, "unit": null, "name": "cucumber, sliced"}, {"amt": null, "unit": null, "name": "jasmine rice, to serve"}, {"amt": null, "unit": null, "name": "lime wedges"}], "method": ["Build the nuoc mau first: sugar and water over medium. Swirl the pan, never stir. Take it to deep amber.", "Kill the caramel with the fish sauce and a splash of water - it will seize and spit, that's expected.", "Bloom the shallots and garlic in the pan.", "Cook the pork through completely. Grinding distributes surface bacteria throughout, so unlike whole cuts this gets no low pull.", "Glaze the pork in the caramel and reduce until it lacquers.", "Coarse black pepper, green onion, cucumber, rice, lime."], "notes": ["Honey won't substitute for granulated sugar in nuoc mau - it scorches before it caramelizes.", "Same sauce-first caramel discipline as the ca kho work.", "Carryover heat is real here - pull it slightly before it looks finished."], "keeper": false, "needsFix": false}, {"id": "r-red-wine-jus", "title": "Red Wine Jus (Bordelaise-style, no cream)", "category": "sauces", "servings": "~2 cups / serves 6", "time": "4-5 hr", "style": "French", "rating": null, "source": "Drive", "ingredients": [{"amt": 2, "unit": "lb", "name": "beef bones or beef shank"}, {"amt": 1, "unit": null, "name": "yellow onion, rough chopped"}, {"amt": 1, "unit": null, "name": "carrot, rough chopped"}, {"amt": 2.5, "unit": null, "name": "celery ribs, rough chopped"}, {"amt": 4, "unit": null, "name": "shallots, thin sliced"}, {"amt": 2, "unit": "tbsp", "name": "tomato paste"}, {"amt": 2, "unit": "cup", "name": "dry red wine"}, {"amt": 2, "unit": "quart", "name": "beef stock"}, {"amt": 7, "unit": null, "name": "thyme sprigs"}, {"amt": 2, "unit": null, "name": "bay leaves"}, {"amt": 1, "unit": "tbsp", "name": "peppercorns"}, {"amt": 1.5, "unit": "tbsp", "name": "neutral oil"}, {"amt": 2, "unit": "tbsp", "name": "cold butter, optional finish"}, {"amt": null, "unit": null, "name": "salt, only at the end"}], "method": ["Roast bones and veg at 450°F for 45-60 minutes, turning once, until very brown but not burnt. Smear the tomato paste on for the last 10 minutes so it darkens. Target: lots of dark fond on the tray.", "Move everything to a large pot. Deglaze the roasting tray with the red wine, scraping every brown bit. All of it into the pot.", "Simmer 10-15 minutes until the wine reduces by half - it should smell concentrated rather than boozy.", "Add stock, shallots, thyme, bay, peppercorns. Bare simmer, uncovered, 2.5-3 hours. Skim grey foam once or twice early.", "Strain through fine mesh into a clean pot, pressing lightly. Reduce to ~2 cups, until a finger swiped across the back of a spoon leaves a line that holds.", "Season with salt in small pinches at the very end. A teaspoon of sherry vinegar if it needs brightness. Optional cold butter off heat for gloss."], "notes": ["Make-ahead: cool fast in a shallow container, fridge up to 3 days, or freeze.", "Rewarm gently. Too thick - warm stock a tablespoon at a time. Too thin - simmer 5-10 minutes. Too salty - stock or water, then re-taste.", "Built for the Christmas dinner menu."], "keeper": false, "needsFix": false}, {"id": "r-bolognese", "title": "Show-Stopping Bolognese alla Olivia", "category": "pasta", "servings": "20 portions", "time": "4-5 hours", "style": "Classic Italian", "rating": null, "source": "Drive", "ingredients": [{"amt": 3, "unit": "tbsp", "name": "olive oil"}, {"amt": 4, "unit": "tbsp", "name": "unsalted butter"}, {"amt": 200, "unit": "g", "name": "pancetta, finely diced"}, {"amt": 3, "unit": null, "name": "yellow onions, finely diced"}, {"amt": 4, "unit": null, "name": "carrots, finely diced"}, {"amt": 4, "unit": null, "name": "celery stalks, finely diced"}, {"amt": 6, "unit": null, "name": "garlic cloves, minced"}, {"amt": 1, "unit": "kg", "name": "ground beef (80/20)"}, {"amt": 500, "unit": "g", "name": "ground pork"}, {"amt": 4, "unit": "tbsp", "name": "tomato paste"}, {"amt": 500, "unit": "ml", "name": "dry white wine"}, {"amt": 250, "unit": "ml", "name": "whole milk"}, {"amt": 2, "unit": "cans", "name": "San Marzano crushed tomatoes (800g each)"}, {"amt": 500, "unit": "ml", "name": "beef stock"}, {"amt": 3, "unit": null, "name": "bay leaves"}, {"amt": 4, "unit": null, "name": "fresh thyme sprigs"}, {"amt": 0.5, "unit": "tsp", "name": "freshly grated nutmeg"}, {"amt": 1, "unit": null, "name": "Parmigiano-Reggiano rind"}, {"amt": 2, "unit": "tbsp", "name": "cold unsalted butter, for finishing"}, {"amt": 100, "unit": "g", "name": "Parmigiano-Reggiano, grated, to serve"}, {"amt": null, "unit": null, "name": "salt and black pepper"}], "method": ["Soffritto: butter into olive oil over medium-low. Render the pancetta 5 minutes. Onions, carrots, celery with a pinch of salt; 20-25 minutes to completely soft and golden. This is the foundation and it cannot be fixed later.", "Garlic, 2 minutes, fragrant without browning.", "Brown the meat in 3-4 batches over medium-high. Don't crowd the pan. Deep brown, not grey steam. 4-5 minutes a batch.", "Caramelize the tomato paste in the centre of the pot, untouched, 90 seconds, then stir through.", "Whole milk in, cook down completely, about 10 minutes. It tenderizes the meat and rounds the acidity. It will look wrong, then it will look right.", "White wine, reduce 15-20 minutes until the sharp alcohol smell is gone and it's down about 80%.", "Crushed tomatoes, stock, bay, thyme, nutmeg, Parm rind. Season. Gentle bubble.", "SMALLEST BURNER, lowest setting - not just the lowest flame on the big burner. Occasional lazy bubble only. Uncovered or lid barely ajar, 3-4 hours. Stir every 15-20 minutes in the back half, splash of stock if it looks dry. Ready when the fat separates on top and it coats a spoon heavily.", "Remove the aromatics and rind. Adjust. Stir in 2 tbsp cold butter off heat for gloss. Rest 10 minutes.", "Serve: tagliatelle or pappardelle just shy of al dente, reserve 1-2 cups pasta water, finish the pasta in the sauce."], "notes": ["SCORCH FIX: the May 2026 batch burned on the bottom despite stirring every 15-20 min. Cause was the largest burner even at its lowest setting. Use the smallest burner. A flame diffuser is worth owning on a gas range.", "If it does scorch: acid (red wine vinegar or lemon, small increments) counters bitterness better than sugar. Cold butter or olive oil coats the palate.", "Freezing: cool completely, 2-portion bags laid flat, 4 months. Thaw overnight in the fridge, never microwave from frozen.", "Start saving Parm rinds in the freezer. The savoury backbone can't be replicated any other way.", "Day 2 rule: always better the next day. Make it Saturday, serve it Sunday."], "keeper": true, "needsFix": false}, {"id": "r-mushroom-pasta", "title": "Umami Miso Butter Mushroom Pasta", "category": "pasta", "servings": "2", "time": "25-30 min", "style": "Italian-Japanese", "rating": null, "source": "Sep 2026 chat", "ingredients": [{"amt": 200, "unit": "g", "name": "spaghetti or bucatini"}, {"amt": 300, "unit": "g", "name": "cremini mushrooms, sliced"}, {"amt": 15, "unit": "g", "name": "dried shiitake"}, {"amt": 1, "unit": "cup", "name": "hot water, for soaking"}, {"amt": 3, "unit": "tbsp", "name": "unsalted butter"}, {"amt": 1, "unit": "tbsp", "name": "white miso"}, {"amt": 3, "unit": null, "name": "garlic cloves, sliced"}, {"amt": 1, "unit": "tbsp", "name": "olive oil"}, {"amt": 0.5, "unit": null, "name": "lemon"}, {"amt": 40, "unit": "g", "name": "Parmigiano-Reggiano, grated"}, {"amt": 2, "unit": "tbsp", "name": "flat-leaf parsley, chopped"}, {"amt": null, "unit": null, "name": "black pepper"}], "method": ["Rehydrate the shiitake in hot water. Keep the soaking liquid - it's the flavour base.", "Sear the cremini hard in olive oil. Salt them ONLY after they've browned; salting early pulls water and you get steam instead of colour.", "Add garlic and the chopped rehydrated shiitake.", "Deglaze with the shiitake soaking liquid, leaving the grit behind.", "Whisk butter and miso together, then emulsify into the pan with pasta water. No cream needed.", "Toss the pasta through, finishing it in the sauce.", "Lemon juice OFF heat to keep it bright. Parmesan OFF heat for a glossy emulsion rather than a stringy one.", "Parsley and coarse black pepper."], "notes": ["Vegetarian as written. Shrimp or chicken can go in at the searing step.", "The two levers that make it: salting the mushrooms late, and the shiitake soaking liquid."], "keeper": false, "needsFix": false}, {"id": "r-gnocchi-miso-cream", "title": "Seared Gnocchi with Miso Cream Sauce", "category": "pasta", "servings": "2", "time": "~25 min", "style": "Italian-Japanese", "rating": null, "source": "Aug 2026 chat", "ingredients": [{"amt": 400, "unit": "g", "name": "gnocchi (thawed if frozen)"}, {"amt": 0.75, "unit": "cup", "name": "heavy cream"}, {"amt": 1, "unit": "tbsp", "name": "white miso"}, {"amt": 3, "unit": null, "name": "garlic cloves, sliced"}, {"amt": 1, "unit": "tbsp", "name": "butter"}, {"amt": 1, "unit": "tbsp", "name": "olive oil"}, {"amt": 0.5, "unit": null, "name": "lemon"}, {"amt": null, "unit": null, "name": "black pepper"}, {"amt": null, "unit": null, "name": "parsley or basil, to finish"}], "method": ["Sear the gnocchi rather than boiling them - straight into a hot pan with butter and oil for a crisp exterior.", "Get real colour on them, then remove.", "Garlic in the fond. Add the cream and REDUCE - no flour, no starch slurry. Reduction is what makes it glossy and coating.", "Whisk the miso in off the direct heat. It stands in for parmesan as the umami and salt source.", "Return the gnocchi, toss to coat.", "Lemon at the end to cut the richness."], "notes": ["Dairy-free version: full-fat coconut milk with the same miso-garlic-lemon structure.", "The fond from searing the gnocchi is the base of the sauce - don't wipe the pan."], "keeper": false, "needsFix": false}, {"id": "r-mulligatawny", "title": "Mulligatawny - Anglo-Indian Chicken & Red Lentil Soup", "category": "soups", "servings": "6-8 portions", "time": "~75 min active", "style": "Anglo-Indian", "rating": null, "source": "May 2026 chat", "ingredients": [{"amt": 7, "unit": null, "name": "bone-in skin-on chicken thighs"}, {"amt": 2, "unit": "L", "name": "chicken stock"}, {"amt": 2, "unit": "cans", "name": "full-fat coconut milk (400ml cans)"}, {"amt": 300, "unit": "g", "name": "red lentils, rinsed"}, {"amt": 1, "unit": null, "name": "yellow onion, small dice"}, {"amt": 3, "unit": null, "name": "celery stalks, small dice"}, {"amt": 2, "unit": null, "name": "carrots, small dice"}, {"amt": 4, "unit": null, "name": "garlic cloves, minced"}, {"amt": 2, "unit": "tbsp", "name": "fresh ginger, grated"}, {"amt": 1, "unit": null, "name": "Granny Smith apple, peeled & small diced"}, {"amt": 2, "unit": "tsp", "name": "ground cumin"}, {"amt": 2, "unit": "tsp", "name": "ground coriander"}, {"amt": 1.5, "unit": "tsp", "name": "turmeric"}, {"amt": 1, "unit": "tsp", "name": "garam masala"}, {"amt": 1, "unit": "tsp", "name": "Kashmiri chili"}, {"amt": 0.5, "unit": "tsp", "name": "black pepper"}, {"amt": 1, "unit": null, "name": "lemon, juiced"}, {"amt": 2, "unit": "tbsp", "name": "ghee or neutral oil"}, {"amt": null, "unit": null, "name": "fresh cilantro, to finish"}, {"amt": null, "unit": null, "name": "lemon wedges, to serve"}], "method": ["Pat the thighs dry, season both sides. Mix the spice blend in a small bowl and set aside.", "Ghee in the 8L Dutch oven over medium-high. Thighs skin-side down, untouched 5-6 minutes until deeply golden and they release naturally. Flip 2 minutes. Remove. The fond is the flavour base for the whole pot.", "Pour off all but 2 tbsp fat. Onion, celery, carrot 8-10 minutes until softened and colouring at the edges. You want real browning, not just softening.", "Push the veg aside, garlic and ginger direct on the pot bottom for 2 minutes.", "Bloom the spice blend 60-90 seconds, stirring continuously. This is what separates a complex curry base from a flat one - the fat-soluble compounds can't release in water.", "Apple in, 1-2 minutes. Then the rinsed lentils, stir through.", "Stock in, scrape the fond. Nestle the thighs back skin-side up with the skin above the liquid so it keeps rendering rather than going rubbery. Boil, then steady simmer.", "Covered, 35-40 minutes, until the lentils have completely dissolved and the chicken is pulling from the bone. Red lentils don't soften, they dissolve - that's the silky body with no blending.", "Remove the thighs, discard skin and bones, shred the meat.", "Both cans of coconut milk in, uncovered 5-10 minutes so it reduces and integrates. Adding it at the very end gives a raw coconut taste.", "Lemon juice last so the brightness stays sharp, then the shredded chicken back in for 2 minutes. Cilantro and a lemon wedge."], "notes": ["Confirmed keeper - 'as good as any soup I've ever made'. Weekly batch cook rotation.", "Don't crowd the pan on the sear. Two batches if the thighs are large.", "Note for red lentil soups generally: they rarely clear the 7.5 line without bloomed spices, proper tadka, and an acid finish. This one clears it because it does all three."], "keeper": true, "needsFix": false}, {"id": "r-butternut-soup", "title": "Roasted Butternut Squash & White Bean Soup with Crispy-Skin Chicken", "category": "soups", "servings": "6", "time": "~75 min", "style": "Seasonal, DASH-built", "rating": null, "source": "Sep 2026 chat", "ingredients": [{"amt": 1, "unit": null, "name": "butternut squash, cubed"}, {"amt": 3, "unit": null, "name": "carrots, chunked"}, {"amt": 2, "unit": null, "name": "leeks, sliced and washed"}, {"amt": 2, "unit": "cans", "name": "cannellini or white beans, drained"}, {"amt": 1.5, "unit": "L", "name": "unsalted chicken or vegetable broth"}, {"amt": 2, "unit": "tsp", "name": "mushroom powder"}, {"amt": 1.5, "unit": "tbsp", "name": "white miso"}, {"amt": 5, "unit": null, "name": "garlic cloves"}, {"amt": 3, "unit": "tbsp", "name": "olive oil"}, {"amt": 1, "unit": "tbsp", "name": "apple cider vinegar"}, {"amt": 4, "unit": null, "name": "bone-in skin-on chicken thighs"}, {"amt": 0.33, "unit": "cup", "name": "pepitas, toasted"}, {"amt": null, "unit": null, "name": "black pepper"}], "method": ["Roast the squash, carrots, and garlic at 425°F until genuinely caramelized, not just soft. Deep colour is the flavour base.", "Sweat the leeks in olive oil, then bloom the mushroom powder in with them for umami depth.", "Add the roasted veg, the beans, and the broth. Simmer.", "Immersion blend only PART of the pot - you want body with texture remaining, not a puree.", "Miso stirred in OFF the heat so its complexity survives.", "Cold-pan start the chicken thighs skin-side down to render the fat properly, then crisp.", "Apple cider vinegar to finish. The acid brightens the squash's sweetness and cuts how much salt the soup needs.", "Toasted pepitas over the top."], "notes": ["Pescatarian swap: cod or halibut with a lemon finish instead of the chicken.", "Batch cooking: store the soup base separately from the toppings and protein or the texture goes.", "Miso is the primary salt source in the whole build - fibre and potassium from the squash and beans, unsaturated fat from olive oil and pepitas."], "keeper": false, "needsFix": false}, {"id": "r-shakshuka", "title": "Spiced Lentil & Cauliflower Shakshuka", "category": "soups", "servings": "4", "time": "~50 min", "style": "Middle Eastern", "rating": 6.5, "source": "Jun 2026 chat", "ingredients": [{"amt": 1, "unit": "cup", "name": "green or brown lentils"}, {"amt": 1, "unit": "head", "name": "cauliflower, florets"}, {"amt": 0.5, "unit": "can", "name": "San Marzano tomatoes"}, {"amt": 0.5, "unit": "cup", "name": "roasted red peppers"}, {"amt": 1.5, "unit": "tbsp", "name": "harissa paste"}, {"amt": 6, "unit": null, "name": "eggs"}, {"amt": 1, "unit": null, "name": "yellow onion, diced"}, {"amt": 4, "unit": null, "name": "garlic cloves, minced"}, {"amt": 1.5, "unit": "tsp", "name": "ground cumin"}, {"amt": 1, "unit": "tsp", "name": "smoked paprika"}, {"amt": 3, "unit": "tbsp", "name": "olive oil"}, {"amt": null, "unit": null, "name": "fresh parsley or cilantro"}, {"amt": null, "unit": null, "name": "lemon"}], "method": ["Roast the cauliflower until the edges char properly.", "Cook the lentils separately until just tender.", "Build the sauce: onion, garlic, bloomed cumin and paprika, harissa.", "Add the tomatoes AND the roasted red peppers - this is the fix. Half the San Marzano swapped for roasted red pepper to mellow the tomato-forward flavour.", "Fold in the lentils and roasted cauliflower.", "Make wells and crack the eggs in. Cover and poach until the whites set and the yolks are still loose.", "Herbs and a squeeze of lemon."], "notes": ["6.5/10 as originally made - under the 7.5 line. Best shakshuka you've made, but you're not a shakshuka fan; the tomato-forward profile is the issue.", "MODIFICATION PENDING: swap half the San Marzano tomatoes for roasted red peppers. Not yet tested. Rate it again after."], "keeper": false, "needsFix": true}, {"id": "r-freekeh-tabbouleh", "title": "Freekeh Tabbouleh", "category": "salads", "servings": "5", "time": "~45 min", "style": "Levantine", "rating": null, "source": "May 2026 chat", "ingredients": [{"amt": 1.5, "unit": "cup", "name": "whole freekeh"}, {"amt": 3, "unit": "cup", "name": "chicken stock"}, {"amt": 2, "unit": "bunches", "name": "flat-leaf parsley, very finely chopped"}, {"amt": 0.5, "unit": "cup", "name": "fresh mint, finely chopped"}, {"amt": 4, "unit": null, "name": "green onions, thinly sliced"}, {"amt": 1, "unit": null, "name": "English cucumber, finely diced"}, {"amt": 4, "unit": null, "name": "Roma tomatoes, seeded and finely diced"}, {"amt": 0.33, "unit": "cup", "name": "lemon juice, fresh"}, {"amt": 0.25, "unit": "cup", "name": "extra virgin olive oil"}, {"amt": 1, "unit": "tsp", "name": "Himalayan salt"}, {"amt": 0.5, "unit": "tsp", "name": "black pepper"}, {"amt": 0.25, "unit": "tsp", "name": "allspice"}], "method": ["Rinse the freekeh, combine with stock, boil then cover and simmer 25 minutes until the liquid is absorbed.", "Spread on a sheet pan to cool COMPLETELY. Don't rush this or the herbs wilt on contact.", "Chop the parsley very fine - almost fluffy. It defines the texture of the salad. Mint fine too. Dice cucumber and seeded tomatoes, slice green onions.", "Whisk the dressing: lemon juice, olive oil, salt, pepper, allspice.", "Combine everything once the freekeh is cold. Toss well.", "Taste - tabbouleh should be aggressively lemony and aggressively seasoned. Adjust.", "Refrigerate 30 minutes minimum before serving."], "notes": ["Rated delicious. Batches for 5 days.", "Freekeh's natural smokiness is what makes it work alongside the ribs.", "Drain any pooled liquid from the tomato and cucumber before each day's serving.", "Cook the freekeh first in a big prep session - it needs the longest cool-down."], "keeper": true, "needsFix": false}, {"id": "r-fusilli-salad", "title": "Mediterranean Fusilli Pasta Salad", "category": "salads", "servings": "5", "time": "~30 min", "style": "Mediterranean", "rating": null, "source": "May 2026 chat", "ingredients": [{"amt": 300, "unit": "g", "name": "fusilli"}, {"amt": 0.33, "unit": "cup", "name": "sun-dried tomatoes, oil-packed, chopped"}, {"amt": 1, "unit": "cup", "name": "roasted red peppers, diced"}, {"amt": 0.5, "unit": "cup", "name": "marinated mushrooms, drained and halved"}, {"amt": 2, "unit": "tbsp", "name": "capers, drained"}, {"amt": 1, "unit": "cup", "name": "cherry tomatoes, halved"}, {"amt": 1, "unit": null, "name": "English cucumber, diced"}, {"amt": 0.25, "unit": null, "name": "red onion, finely diced"}, {"amt": 0.5, "unit": "cup", "name": "flat-leaf parsley, chopped"}, {"amt": 0.25, "unit": "cup", "name": "fresh basil, torn"}, {"amt": 0.25, "unit": "cup", "name": "extra virgin olive oil"}, {"amt": 3, "unit": "tbsp", "name": "red wine vinegar"}, {"amt": 2, "unit": null, "name": "garlic cloves, minced"}, {"amt": 1, "unit": "tsp", "name": "Dijon mustard"}, {"amt": 1, "unit": "tsp", "name": "dried oregano"}, {"amt": null, "unit": null, "name": "Himalayan salt and black pepper"}], "method": ["Cook the fusilli in well-salted water to just al dente - pull it a minute early.", "Whisk the dressing: olive oil, red wine vinegar, garlic, Dijon, oregano, salt, pepper. Season assertively.", "Drain, rinse cold, toss with a splash of olive oil to stop clumping.", "Combine the cooled pasta with all the vegetables, herbs, and jarred ingredients.", "Dress and toss well. Refrigerate.", "Taste and adjust acid and salt before each serving."], "notes": ["Rated delicious. Better on day 2. Keeps 5 days.", "Marinated mushrooms fill the briny umami gap left by olives and artichoke hearts - both on the permanent no-go list.", "Add feta per serving if you want it; don't mix it into the batch.", "Dry by day 3-4? Drizzle of olive oil and a splash of red wine vinegar brings it back."], "keeper": true, "needsFix": false}, {"id": "r-miso-slaw", "title": "Miso-Ginger Slaw", "category": "salads", "servings": "4-6", "time": "~20 min", "style": "Pan-Asian", "rating": null, "source": "Jun 2026 chat", "ingredients": [{"amt": 0.5, "unit": "head", "name": "green cabbage, THINLY SLICED (not grated)"}, {"amt": 1, "unit": null, "name": "cucumber, julienned"}, {"amt": 4, "unit": null, "name": "green onions, sliced"}, {"amt": 2, "unit": "tbsp", "name": "white miso"}, {"amt": 3, "unit": "tbsp", "name": "rice vinegar"}, {"amt": 1, "unit": "tbsp", "name": "fresh ginger, grated"}, {"amt": 1.5, "unit": "tbsp", "name": "toasted sesame oil"}, {"amt": 1, "unit": "tbsp", "name": "raw honey"}, {"amt": 3, "unit": "tbsp", "name": "neutral oil"}, {"amt": 2, "unit": "tbsp", "name": "toasted sesame seeds"}], "method": ["Slice the cabbage THIN with a knife. Not grated, not finely shredded - the texture is the point. This was the correction from the first cook.", "Julienne the cucumber, slice the green onions.", "Whisk the dressing: miso, rice vinegar, ginger, sesame oil, honey, neutral oil. Quantities here are already scaled to roughly 1.5x the original - the first version was under-dressed.", "Toss and finish with toasted sesame seeds."], "notes": ["Confirmed repeat with two logged corrections applied: thin-sliced cabbage, and 1.5x dressing.", "The formula underneath is acid + umami + thin-sliced cabbage. Riff on it - citrus-sesame, or fish-sauce-and-lime - when you want variety."], "keeper": true, "needsFix": false}, {"id": "r-quinoa-corn-bean", "title": "Charred Corn & Black Bean Quinoa Salad", "category": "salads", "servings": "6", "time": "~35 min", "style": "Southwest", "rating": null, "source": "Sep 2026 chat", "ingredients": [{"amt": 1.5, "unit": "cup", "name": "quinoa, rinsed"}, {"amt": 3, "unit": "cup", "name": "unsalted broth"}, {"amt": 3, "unit": "cup", "name": "corn kernels, fresh"}, {"amt": 2, "unit": "cans", "name": "black beans, drained and rinsed"}, {"amt": 0.5, "unit": null, "name": "red onion, finely diced"}, {"amt": 1, "unit": null, "name": "red bell pepper, diced"}, {"amt": 0.75, "unit": "cup", "name": "cilantro, chopped"}, {"amt": 3, "unit": null, "name": "limes"}, {"amt": 0.25, "unit": "cup", "name": "olive oil"}, {"amt": 1.5, "unit": "tsp", "name": "smoked paprika"}, {"amt": 1.5, "unit": "tsp", "name": "ground cumin"}, {"amt": 0.5, "unit": "cup", "name": "cotija, crumbled"}, {"amt": null, "unit": null, "name": "Himalayan salt"}, {"amt": null, "unit": null, "name": "black pepper"}], "method": ["Cook the quinoa in unsalted broth. Cool completely.", "DRY-char the corn: very hot cast iron, NO oil. Oil makes it steam instead of caramelize. Leave it alone until it blackens in spots.", "Whisk the dressing: olive oil, lime juice, smoked paprika, cumin, salt, pepper.", "Combine quinoa, charred corn, black beans, onion, pepper, cilantro. Dress.", "Cotija goes in at the END - against the acid it turns gummy if added early."], "notes": ["Heart-healthy: high soluble fibre from the beans and quinoa, MUFA-dominant fat from the olive oil, roughly 400-500mg sodium per serving. Reduce the cotija or skip added salt for a stricter target.", "Fridge 4-5 days. Hold the cotija separate throughout storage.", "Fresh squeeze of lime before serving - the dressing absorbs into the quinoa and the brightness fades.", "Reserve some cilantro to add fresh if storing the full five days."], "keeper": false, "needsFix": false}, {"id": "r-charred-corn-salad", "title": "Charred Corn Salad", "category": "salads", "servings": "3-4", "time": "~15 min", "style": "Mexican-leaning", "rating": null, "source": "Aug 2026 chat", "ingredients": [{"amt": 1.5, "unit": "cup", "name": "corn kernels, cut from the cob"}, {"amt": 1, "unit": null, "name": "lime, juiced"}, {"amt": 1, "unit": null, "name": "shallot, finely diced"}, {"amt": 1, "unit": null, "name": "jalapeno, minced"}, {"amt": 0.33, "unit": "cup", "name": "cilantro, chopped"}, {"amt": 2, "unit": "tbsp", "name": "olive oil"}, {"amt": 0.75, "unit": "cup", "name": "cherry tomatoes, halved (optional)"}, {"amt": 0.25, "unit": "cup", "name": "cotija or feta (optional)"}], "method": ["Dry skillet, high heat, no oil. Char the kernels properly - this is the whole technique, it builds savoury depth without leaning on salt.", "If the corn was already boiled or husk-steamed, the char step matters even more: husk-steaming leaves the kernels pale and tender, so you're rebuilding Maillard browning from scratch.", "Off the heat, toss with lime, shallot, jalapeno, olive oil.", "Cilantro at the end. No cilantro? Basil or mint fit the profile best, then flat-leaf parsley, then chives or scallion greens. Fine without any herb - just add extra lime."], "notes": ["Black beans or avocado make it substantial enough to be a meal.", "Vietnamese variation: nuoc cham dressing (fish sauce, lime, honey, garlic, chile, sesame oil) with herbs, scallion, and crushed nuts. Make-ahead split - char through dressing ahead, hold scallion, lime, and nuts for the last minute. Pull from the fridge 15-20 min before the final taste.", "Dried mint substitution: 1 tsp only (not 1 cup as fresh), bloomed into the warm dressing rather than used as a finish."], "keeper": false, "needsFix": false}, {"id": "r-cucumber-sunomono", "title": "Japanese Cucumber Salad (Sunomono-style)", "category": "salads", "servings": "2", "time": "~20 min", "style": "Japanese", "rating": null, "source": "Jun 2026 chat", "ingredients": [{"amt": 0.5, "unit": null, "name": "cucumber, very thinly sliced"}, {"amt": 0.5, "unit": "tsp", "name": "salt, for drawing water"}, {"amt": 3, "unit": "tbsp", "name": "rice vinegar"}, {"amt": 1, "unit": "tsp", "name": "soy sauce"}, {"amt": 1, "unit": "tsp", "name": "toasted sesame oil"}, {"amt": 1, "unit": "tsp", "name": "sugar"}, {"amt": 1, "unit": "tsp", "name": "fresh ginger, grated"}, {"amt": 1, "unit": "tsp", "name": "toasted sesame seeds"}, {"amt": 1, "unit": null, "name": "green onion, sliced"}], "method": ["Slice the cucumber as thin as you can. Salt it and let it drain 15 minutes.", "Squeeze out the water. This step is not optional - it's what keeps the dressing from being diluted into nothing.", "Whisk rice vinegar, soy, sesame oil, sugar, and FRESH grated ginger. Fresh ginger, not powdered - it's the other thing not to skip.", "Dress just before serving. Sesame seeds and green onion."], "notes": ["Three other directions on the same cucumber: Korean oi muchim, Sichuan smashed, Thai."], "keeper": false, "needsFix": false}, {"id": "r-beet-carpaccio", "title": "Beet Carpaccio", "category": "salads", "servings": "6 starter plates", "time": "~90 min + chilling", "style": "Modern plated starter", "rating": null, "source": "Drive", "ingredients": [{"amt": 6, "unit": null, "name": "medium beets (mix red and golden)"}, {"amt": 1, "unit": "tbsp", "name": "olive oil"}, {"amt": 1, "unit": "tsp", "name": "kosher salt"}, {"amt": 1, "unit": null, "name": "large shallot, very thinly sliced"}, {"amt": 0.33, "unit": "cup", "name": "red wine vinegar"}, {"amt": 0.33, "unit": "cup", "name": "water"}, {"amt": 2, "unit": "tsp", "name": "sugar"}, {"amt": 1, "unit": "tsp", "name": "kosher salt, for the pickle"}, {"amt": 0.25, "unit": "cup", "name": "extra virgin olive oil"}, {"amt": 2, "unit": "tbsp", "name": "sherry vinegar"}, {"amt": 2, "unit": "tbsp", "name": "orange juice"}, {"amt": 1, "unit": "tsp", "name": "Dijon"}, {"amt": 1, "unit": "tsp", "name": "honey or maple"}, {"amt": 2, "unit": null, "name": "oranges, segmented"}, {"amt": 1, "unit": null, "name": "small fennel bulb, shaved paper-thin"}, {"amt": 0.5, "unit": "cup", "name": "pistachios, toasted and chopped"}, {"amt": 0.25, "unit": "cup", "name": "fresh dill or chives"}, {"amt": 2, "unit": "cup", "name": "arugula or microgreens"}, {"amt": null, "unit": null, "name": "flaky salt and orange zest, to finish"}, {"amt": 0.25, "unit": "cup", "name": "creme fraiche or Greek yogurt (optional horseradish cream)"}, {"amt": 1.5, "unit": "tsp", "name": "prepared horseradish"}], "method": ["Roast the beets: 400°F (375°F convection), skins on, oiled and seasoned, wrapped tight in foil. 45-75 minutes until a knife slides in easily. Cool 10-15 min, rub the skins off with paper towel, then chill 30-60 minutes for clean slicing.", "Quick-pickle the shallots while the beets roast: vinegar, water, sugar, salt dissolved, sliced shallots in, 15-30 minutes.", "Vinaigrette: whisk sherry vinegar, orange juice, Dijon, salt, pepper, honey. Stream in the olive oil. Adjust - more salt if flat, more orange if sharp, more vinegar if sweet.", "Prep garnish: segment the oranges, shave the fennel paper-thin (ice water 10 min then pat dry for extra crisp), toast and chop the pistachios, mix the horseradish cream.", "Slice the beets paper-thin on a mandoline. Keep red and golden separate if you care about colour bleed.", "Plate one at a time: smear 1-2 tsp vinaigrette on the plate with the back of a spoon. Shingle the beets in a tight overlapping circle, alternating colours. Pinch of salt over them even though they were roasted seasoned.", "3-5 orange segments around the plate. Scatter pickled shallots, then pistachios. A tuft of microgreens and a few wisps of fennel. Dill or chives.", "Optional: 6-10 small dots of horseradish cream - dots, don't smear.", "Finish: tiny drizzle of good olive oil, flaky salt, black pepper, orange zest. Glossy and tight, not wet."], "notes": ["Make-ahead: beets roasted and peeled up to 3 days, pickled shallots 5 days, vinaigrette 5 days. Slice the beets same day ideally, or a few hours ahead covered.", "Dairy-free horseradish cream: cashew cream instead of creme fraiche.", "Built for the Christmas menu."], "keeper": false, "needsFix": false}, {"id": "r-baked-oats", "title": "Cardamom & Rose Water Baked Oats", "category": "breakfast", "servings": "6", "time": "~50 min", "style": "Middle Eastern", "rating": null, "source": "May 2026 chat", "ingredients": [{"amt": 3, "unit": "cup", "name": "rolled oats"}, {"amt": 2, "unit": "cup", "name": "hazelnut milk (or milk of choice)"}, {"amt": 2, "unit": null, "name": "large eggs"}, {"amt": 3, "unit": "tbsp", "name": "raw honey"}, {"amt": 1.5, "unit": "tsp", "name": "rose water"}, {"amt": 8, "unit": null, "name": "cardamom pods, toasted and freshly ground"}, {"amt": 1, "unit": "tsp", "name": "vanilla extract"}, {"amt": 1, "unit": null, "name": "orange, zested"}, {"amt": 1, "unit": "tsp", "name": "baking powder"}, {"amt": 0.25, "unit": "tsp", "name": "Himalayan salt"}, {"amt": 4, "unit": null, "name": "Medjool dates, pitted and finely chopped"}, {"amt": 0.33, "unit": "cup", "name": "pistachios, roughly chopped"}, {"amt": 1, "unit": "tbsp", "name": "tahini, for serving"}, {"amt": 1, "unit": "tsp", "name": "raw honey, for serving"}], "method": ["Preheat to 375°F. Grease or line an 8x8 pan - square gives you clean sliceable portions.", "Toast the cardamom pods in a dry pan 60-90 seconds until fragrant. Cool, crack, grind the seeds. Fresh-ground is noticeably brighter than pre-ground.", "Whisk the wet: milk, eggs, honey, rose water, vanilla, orange zest. Go easy on the rose water - 1.5 tsp is the ceiling, past that it tips soapy.", "Mix the dry: oats, ground cardamom, baking powder, salt. Fold in the chopped dates - they add caramel pockets and help bind the interior.", "Combine and rest so the oats hydrate.", "Into the pan, press the chopped pistachios on top as a crust.", "Bake until set and firm enough to slice cleanly.", "Serve with tahini and honey drizzled at serve time, not baked in."], "notes": ["Firm and sliceable by design - built for weekend batch, weekday reheat.", "Pan-sear each slice rather than microwaving. It restores the pistachio crust.", "Blueberry variation fits the rose water profile and your daily staples."], "keeper": false, "needsFix": false}, {"id": "r-overnight-oats-tahini", "title": "Tahini, Date & Espresso Overnight Oats", "category": "breakfast", "servings": "6 jars", "time": "15 min + overnight", "style": "Middle Eastern", "rating": 4, "source": "Jun 2026 chat", "ingredients": [{"amt": 3, "unit": "cup", "name": "rolled oats"}, {"amt": 3, "unit": "cup", "name": "hazelnut milk"}, {"amt": 0.5, "unit": "cup", "name": "espresso or strong cold brew"}, {"amt": 4, "unit": "tbsp", "name": "tahini"}, {"amt": 6, "unit": null, "name": "Medjool dates, chopped"}, {"amt": 2, "unit": "tbsp", "name": "raw honey"}, {"amt": 0.5, "unit": "cup", "name": "coconut yogurt"}, {"amt": null, "unit": null, "name": "blueberries, to top"}, {"amt": 2, "unit": "tbsp", "name": "hemp seeds, to top"}], "method": ["Whisk the hazelnut milk, espresso, tahini, and honey together.", "Divide the oats and chopped dates across 6 jars, pour the liquid over.", "Overnight in the fridge.", "Top with blueberries and hemp seeds at serve time."], "notes": ["DISCARDED - will not make again. Too much oat texture, too much coffee flavour, too many dates.", "Kept on file as a record of what didn't work. If ever revisited: cut the espresso hard, halve the dates, and consider blending part of the oats."], "keeper": false, "needsFix": false}, {"id": "r-macerated-berries", "title": "Macerated Strawberry & Cream-Yogurt Bowl", "category": "breakfast", "servings": "2", "time": "~20 min", "style": "Simple", "rating": null, "source": "Jul 2026 chat", "ingredients": [{"amt": 2, "unit": "cup", "name": "strawberries, hulled and sliced"}, {"amt": 1.5, "unit": "tbsp", "name": "raw honey"}, {"amt": 1, "unit": "pinch", "name": "salt"}, {"amt": 0.5, "unit": "tsp", "name": "lemon juice or balsamic"}, {"amt": 1, "unit": "cup", "name": "Greek yogurt"}, {"amt": 0.33, "unit": "cup", "name": "heavy cream"}, {"amt": 0.75, "unit": "cup", "name": "blueberries, whole"}, {"amt": 0.25, "unit": "cup", "name": "pistachios, dry-toasted and chopped"}, {"amt": 1, "unit": "pinch", "name": "ground cardamom (optional)"}], "method": ["Macerate the strawberries with honey, a pinch of salt, and a touch of acid. Wait for the glossy syrup to develop - the salt and acid are what make it happen.", "Whip the cream and fold it into the Greek yogurt. Lightens the texture and balances the tang.", "Layer rather than mix: the softened macerated strawberries against whole raw blueberries is the textural contrast.", "Dry-toast the pistachios and add them ON TOP of the syrup at the end, never folded in, or they go soft."], "notes": ["Pistachios over hazelnuts here - the savoury edge cuts the sweet macerated fruit. Hazelnuts are the richer, more dessert-leaning option.", "Cardamom is a good flavour bridge if you want to push it further.", "Add a crunchy element and the same components become an Eton mess."], "keeper": false, "needsFix": false}, {"id": "r-olive-oil-cake", "title": "Olive Oil Citrus Cake", "category": "desserts", "servings": "9-inch round", "time": "~55 min", "style": "Mediterranean", "rating": null, "source": "Drive", "ingredients": [{"amt": 260, "unit": "g", "name": "flour"}, {"amt": 2, "unit": "tsp", "name": "baking powder"}, {"amt": 0.5, "unit": "tsp", "name": "fine salt"}, {"amt": 200, "unit": "g", "name": "sugar"}, {"amt": 3, "unit": null, "name": "large eggs"}, {"amt": 180, "unit": "ml", "name": "olive oil (mild/medium, not peppery)"}, {"amt": 1, "unit": "tbsp", "name": "orange zest (about 2 oranges)"}, {"amt": 120, "unit": "ml", "name": "orange juice"}, {"amt": 1, "unit": "tsp", "name": "vanilla"}, {"amt": 1, "unit": "tbsp", "name": "lemon juice (optional)"}], "method": ["Dark pan + convection settings: 315°F convection, middle rack, 32-40 minutes, start checking at 30.", "Parchment round on the bottom, oil the sides and the parchment. Set the cake pan on a sheet pan to buffer the heat and stop the edges over-browning.", "Whisk flour, baking powder, and salt. Set aside.", "Whisk eggs and sugar hard for 60-90 seconds until lighter and foamy. Stream in the olive oil while whisking - this keeps it smooth rather than greasy.", "Whisk in zest, orange juice, vanilla, and lemon juice.", "Dry into wet in 2 additions, folding gently until no dry flour remains. Stop there - overmixing makes it dense.", "Bake 20 minutes, then rotate 180° (dark pans brown unevenly). Tent loosely with foil at 25-28 min if the top is darkening.", "Done: toothpick with a few MOIST CRUMBS, not clean-dry. Top springs back. Internal 200-205°F.", "Cool in the pan 15 minutes, knife around the edge, turn out, peel parchment, flip upright. Cool fully before wrapping."], "notes": ["Doneness warning: a clean-dry toothpick means you've gone too far. Pull while there are still moist crumbs.", "Make-ahead: wrapped tight once cool, it holds overnight at room temperature perfectly.", "Restaurant finish: powdered sugar, or brush with a quick syrup - 2 tbsp orange juice plus 2 tbsp sugar warmed until dissolved."], "keeper": false, "needsFix": false}, {"id": "r-margarita", "title": "Margarita & Spicy Margarita", "category": "drinks", "servings": "1", "time": "5 min (+ infusion)", "style": "Classic", "rating": null, "source": "Aug 2026 chat", "ingredients": [{"amt": 1.5, "unit": "oz", "name": "blanco tequila"}, {"amt": 1, "unit": "oz", "name": "fresh lime juice"}, {"amt": 0.5, "unit": "oz", "name": "Cointreau"}, {"amt": 0.25, "unit": "oz", "name": "agave"}, {"amt": 1, "unit": "dash", "name": "saline solution"}, {"amt": 1, "unit": null, "name": "fresh jalapeno, sliced (for the spicy version)"}, {"amt": null, "unit": null, "name": "Tajin, for the rim (optional)"}], "method": ["The base build: 1.5 oz blanco tequila, 1 oz fresh lime, 0.5 oz Cointreau, 0.25 oz agave, dash of saline. Shake hard, strain.", "For the spicy version, infuse the tequila rather than changing the ratios - the citrus-agave-orange interplay is already balanced and shouldn't be touched.", "Slice fresh jalapeno, submerge in the blanco, taste every 20-30 minutes. Strain at the heat level you want - usually 45 minutes to 1.5 hours.", "Strain out ALL the solids before storing or extraction continues and it keeps getting hotter.", "Build the same drink with the infused tequila. Optional Tajin rim."], "notes": ["Infusion beats a cayenne rim or hot sauce - it puts the heat into the spirit itself rather than bolting it on.", "Storage: bottled and frozen, it holds its heat for weeks. Capsaicin is stable and alcohol-soluble, doesn't degrade from cold or oxidation, and 40% ABV won't solidify in a home freezer.", "House batch version uses Altos Blanco plus Cointreau."], "keeper": false, "needsFix": false}];
+
+let state = { recipes:[], week:[], activeCategory:'all', searchTerm:'', detailId:null, view:'library' };
+
+function sGet(key){
+  try{ return localStorage.getItem('stable_'+key); }
+  catch(e){ return null; }
+}
+function sSet(key, val){
+  try{ localStorage.setItem('stable_'+key, val); return true; }
+  catch(e){ console.error('storage set failed', key, e); return false; }
+}
+
+function saveRecipes(){ return sSet('recipes_v2', JSON.stringify(state.recipes)); }
+function saveWeek(){ return sSet('week_v2', JSON.stringify(state.week)); }
+
+function init(){
+  const seeded = sGet('seed_version');
+  let stored = sGet('recipes_v2');
+
+  if(String(seeded) !== String(SEED_VERSION) || !stored){
+    // Merge: keep any user-added recipes that aren't part of the seed set
+    let userAdded = [];
+    let prevById = {};
+    if(stored){
+      try{
+        const prev = JSON.parse(stored);
+        const seedIds = new Set(DEFAULT_RECIPES.map(r=>r.id));
+        userAdded = prev.filter(r=>!seedIds.has(r.id));
+        prev.forEach(r=>{ prevById[r.id] = r; });
+      }catch(e){}
+    }
+    // New file wins on recipe content; your ratings survive the update.
+    const merged = DEFAULT_RECIPES.map(r=>{
+      const old = prevById[r.id];
+      const copy = Object.assign({}, r);
+      if(old && old.rating != null) copy.rating = old.rating;
+      return copy;
+    });
+    state.recipes = merged.concat(userAdded);
+    saveRecipes();
+    sSet('seed_version', String(SEED_VERSION));
+  } else {
+    try{ state.recipes = JSON.parse(stored); }
+    catch(e){ state.recipes = DEFAULT_RECIPES.map(r=>Object.assign({}, r)); }
+  }
+
+  const w = sGet('week_v2');
+  state.week = w ? JSON.parse(w) : [];
+
+  buildTabs();
+  buildCategorySelect();
+  addIngRow(); addIngRow(); addStepRow();
+  document.getElementById('searchBox').addEventListener('input', e=>{
+    state.searchTerm = e.target.value.toLowerCase();
+    renderLibrary();
+  });
+
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  renderLibrary();
+  renderWeek();
+}
+
+function goTo(view, id){
+  state.view = view;
+  if(id) state.detailId = id;
+  ['library','detail','week','add'].forEach(v=>{
+    document.getElementById('view-'+v).classList.toggle('hidden', v!==view);
+  });
+  ['library','week','add'].forEach(v=>{
+    const b = document.getElementById('nav-'+v);
+    if(b) b.classList.toggle('active', v===view);
+  });
+  if(view==='detail') renderDetail();
+  if(view==='week') renderWeek();
+  window.scrollTo(0,0);
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>t.classList.remove('show'), 1900);
+}
+
+function buildTabs(){
+  const wrap = document.getElementById('tabs');
+  wrap.innerHTML = '';
+  const mk = (label, id, extra) => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (extra||'') + (id==='all' ? ' active' : '');
+    b.textContent = label;
+    b.onclick = ()=>setCategory(id, b);
+    wrap.appendChild(b);
+  };
+  mk('All','all');
+  mk('Keepers','keepers',' keepers');
+  mk('Needs a fix','fix');
+  CATEGORIES.forEach(c=>mk(c.label, c.id));
+}
+function setCategory(id, btn){
+  state.activeCategory = id;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderLibrary();
+}
+
+function matchesSearch(r, term){
+  if(!term) return true;
+  if(r.title.toLowerCase().includes(term)) return true;
+  if((r.style||'').toLowerCase().includes(term)) return true;
+  return r.ingredients.some(i=>i.name.toLowerCase().includes(term));
+}
+
+function renderLibrary(){
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('libraryEmpty');
+  grid.innerHTML = '';
+  const list = state.recipes.filter(r=>{
+    const c = state.activeCategory;
+    let catOK;
+    if(c==='all') catOK = true;
+    else if(c==='keepers') catOK = !!r.keeper;
+    else if(c==='fix') catOK = !!r.needsFix;
+    else catOK = r.category===c;
+    return catOK && matchesSearch(r, state.searchTerm);
+  });
+  document.getElementById('recipeCount').textContent =
+    state.recipes.length + (state.recipes.length===1 ? ' recipe' : ' recipes');
+
+  if(list.length===0){ empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  list.forEach(r=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.setProperty('--cat-color', 'var(--'+r.category+')');
+    card.onclick = ()=>goTo('detail', r.id);
+    const inWeek = state.week.includes(r.id);
+    const meta = [r.time, r.servings ? 'Serves '+r.servings : ''].filter(Boolean).join('  \u00b7  ');
+    card.innerHTML =
+      '<span class="cat-pill">'+catLabel(r.category)+'</span>' +
+      '<h3>'+esc(r.title)+'</h3>' +
+      '<div class="meta">'+esc(meta)+'</div>' +
+      '<div class="bottom-row">' + ratingChip(r) +
+      (inWeek ? '<span class="week-badge">In this week</span>' : '') +
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+
+function ratingChip(r){
+  if(r.rating!=null){
+    const cls = r.rating >= 7.5 ? '' : ' low';
+    return '<span class="rating-chip'+cls+'">'+r.rating+'/10</span>';
+  }
+  if(r.keeper) return '<span class="rating-chip" style="color:var(--green)">Keeper</span>';
+  if(r.needsFix) return '<span class="rating-chip low">Needs a fix</span>';
+  return '<span class="rating-chip unrated">Not yet rated</span>';
+}
+
+function renderDetail(){
+  const r = state.recipes.find(x=>x.id===state.detailId);
+  const wrap = document.getElementById('detailContent');
+  if(!r){ wrap.innerHTML = '<p>Recipe not found.</p>'; return; }
+  const inWeek = state.week.includes(r.id);
+  const meta = [r.servings ? 'Serves '+r.servings : '', r.time, r.style, r.source]
+    .filter(Boolean).join('  \u00b7  ');
+
+  wrap.innerHTML =
+    '<div class="detail-head" style="--cat-color: var(--'+r.category+')">' +
+      '<span class="cat-pill">'+catLabel(r.category)+'</span>' +
+      '<h2>'+esc(r.title)+'</h2>' +
+      '<div class="meta">'+esc(meta)+'</div>' +
+    '</div>' +
+    '<div class="rate-row">' +
+      '<button class="btn btn-primary'+(inWeek?' active':'')+'" onclick="toggleWeek(\''+r.id+'\')">' +
+        (inWeek ? '\u2713 In this week' : '+ Add to this week') + '</button>' +
+      '<div class="rate-input">' +
+        '<input type="number" min="0" max="10" step="0.5" id="rateInput" value="'+(r.rating!=null?r.rating:'')+'" placeholder="\u2013">' +
+        '<button class="btn btn-ghost" onclick="setRating(\''+r.id+'\')">Rate</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="section-title">Ingredients</div>' +
+    '<ul class="ingredients">' +
+      r.ingredients.map(i=>'<li><span class="amt">'+esc(fmtAmt(i))+'</span><span>'+esc(i.name)+'</span></li>').join('') +
+    '</ul>' +
+    '<div class="section-title">Method</div>' +
+    '<ol class="method">' + r.method.map(s=>'<li>'+esc(s)+'</li>').join('') + '</ol>' +
+    (r.notes && r.notes.length
+      ? '<div class="section-title">Notes</div><ul class="notes">' + r.notes.map(n=>'<li>'+esc(n)+'</li>').join('') + '</ul>'
+      : '') +
+    '<button class="danger-link" onclick="deleteRecipe(\''+r.id+'\')">Remove this recipe from the stable</button>';
+}
+
+function fmtAmt(i){
+  if(i.amt==null) return '';
+  let a = i.amt;
+  const frac = {0.25:'\u00bc',0.33:'\u2153',0.375:'\u215c',0.5:'\u00bd',0.66:'\u2154',0.75:'\u00be'};
+  let s;
+  if(frac[a]) s = frac[a];
+  else if(!Number.isInteger(a)){
+    const whole = Math.floor(a), rem = Math.round((a-whole)*100)/100;
+    s = frac[rem] ? (whole ? whole+frac[rem] : frac[rem]) : String(a);
+  } else s = String(a);
+  return s + (i.unit ? ' '+i.unit : '');
+}
+
+function toggleWeek(id){
+  const idx = state.week.indexOf(id);
+  if(idx>-1) state.week.splice(idx,1); else state.week.push(id);
+  saveWeek();
+  if(state.view==='detail') renderDetail(); else renderWeek();
+  toast(idx>-1 ? 'Removed from this week' : 'Added to this week');
+}
+
+function setRating(id){
+  const val = document.getElementById('rateInput').value;
+  const r = state.recipes.find(x=>x.id===id);
+  r.rating = val==='' ? null : Math.max(0, Math.min(10, parseFloat(val)));
+  saveRecipes(); renderDetail(); toast('Rating saved');
+}
+
+function deleteRecipe(id){
+  if(!confirm('Remove this recipe from the stable?')) return;
+  state.recipes = state.recipes.filter(r=>r.id!==id);
+  state.week = state.week.filter(w=>w!==id);
+  saveRecipes(); saveWeek(); goTo('library'); renderLibrary(); toast('Recipe removed');
+}
+
+function renderWeek(){
+  const listEl = document.getElementById('weekList');
+  const emptyEl = document.getElementById('weekEmpty');
+  const gWrap = document.getElementById('groceryWrap');
+  const picked = state.week.map(id=>state.recipes.find(r=>r.id===id)).filter(Boolean);
+
+  listEl.innerHTML = '';
+  if(picked.length===0){ emptyEl.classList.remove('hidden'); gWrap.classList.add('hidden'); return; }
+  emptyEl.classList.add('hidden'); gWrap.classList.remove('hidden');
+
+  picked.forEach(r=>{
+    const row = document.createElement('div');
+    row.className = 'week-item';
+    row.style.setProperty('--cat-color', 'var(--'+r.category+')');
+    row.innerHTML = '<span class="title">'+esc(r.title)+'</span>' +
+                    '<button class="remove" onclick="toggleWeek(\''+r.id+'\')">Remove</button>';
+    listEl.appendChild(row);
+  });
+  renderGroceryList(buildGroups(picked));
+}
+
+const GROCERY_RULES = [
+  {group:'Produce', kw:['cilantro','parsley','garlic','lemon','lime','onion','shallot','carrot','celery','thyme','herb','basil','mint','dill','cucumber','tomato','cabbage','cauliflower','broccoli','squash','leek','potato','apple','ginger','corn','beet','fennel','pepper,','bell pepper','jalapeno','habanero','chile','chili,','scallion','green onion','arugula','microgreen','mushroom','strawberr','blueberr','orange','avocado','date']},
+  {group:'Meat & seafood', kw:['branzino','haddock','salmon','trout','cod','halibut','fish fillet','beef','pork','pancetta','bacon','chicken','turkey','ribs','bones','shank','belly']},
+  {group:'Dairy & fridge', kw:['butter','milk','cheese','parmigiano','cream','yogurt','feta','cotija','egg','ghee','creme fraiche','mayonnaise','gnocchi']},
+  {group:'Pantry', kw:['oil','wine','stock','broth','paste','vinegar','honey','sugar','flour','oats','quinoa','lentil','bean','freekeh','rice','pasta','fusilli','spaghetti','bucatini','tagliatelle','panko','salt','pepper','cumin','coriander','paprika','cayenne','turmeric','masala','allspice','nutmeg','cardamom','oregano','sumac','za\'atar','five-spice','amchur','tahini','miso','aminos','fish sauce','sesame','molasses','tamarind','harissa','achiote','worcestershire','baking powder','vanilla','rose water','saline','tequila','cointreau','agave','capers','sun-dried','pistachio','walnut','pepita','hemp','seed','coconut','espresso','dijon','mustard','tortilla','foil','banana leaf','lemongrass','shiitake','kombu','chipotle','tajin','horseradish','bay lea','peppercorn','water','soy sauce','kashmiri','stock','broth','wrap','binder']},
+];
+function categorize(name){
+  const n = name.toLowerCase();
+  for(const r of GROCERY_RULES){ if(r.kw.some(k=>n.includes(k))) return r.group; }
+  return 'Other';
+}
+function normKey(name){ return name.toLowerCase().replace(/\(.*?\)/g,'').split(',')[0].trim(); }
+
+function buildGroups(picked){
+  const groups = {};
+  picked.forEach(r=>{
+    r.ingredients.forEach(ing=>{
+      const g = categorize(ing.name);
+      const key = normKey(ing.name) + '|' + (ing.unit||'');
+      groups[g] = groups[g] || {};
+      const ex = groups[g][key];
+      if(ex && ing.amt!=null && ex.amt!=null && ex.unit===ing.unit){
+        ex.amt = Math.round((ex.amt + ing.amt)*100)/100;
+      } else if(!ex){
+        groups[g][key] = {amt:ing.amt, unit:ing.unit, name:ing.name};
+      }
+    });
+  });
+  return groups;
+}
+const GROUP_ORDER = ['Produce','Meat & seafood','Dairy & fridge','Pantry','Other'];
+
+function renderGroceryList(groups){
+  const c = document.getElementById('groceryList');
+  c.innerHTML = '';
+  GROUP_ORDER.forEach(g=>{
+    const items = groups[g];
+    if(!items) return;
+    const div = document.createElement('div');
+    div.className = 'grocery-group';
+    const lis = Object.values(items)
+      .map(i=>'<li>'+(i.amt!=null ? esc(fmtAmt(i))+' \u2014 ' : '')+esc(i.name)+'</li>').join('');
+    div.innerHTML = '<h4>'+g+'</h4><ul>'+lis+'</ul>';
+    c.appendChild(div);
+  });
+}
+
+function copyGroceryList(){
+  const picked = state.week.map(id=>state.recipes.find(r=>r.id===id)).filter(Boolean);
+  const groups = buildGroups(picked);
+  let text = '';
+  GROUP_ORDER.forEach(g=>{
+    const items = groups[g];
+    if(!items) return;
+    text += '\u2014 ' + g.toUpperCase() + ' \u2014\n';
+    Object.values(items).forEach(i=>{
+      text += '- ' + (i.amt!=null ? fmtAmt(i)+' ' : '') + i.name + '\n';
+    });
+    text += '\n';
+  });
+  navigator.clipboard.writeText(text.trim())
+    .then(()=>toast('Grocery list copied'))
+    .catch(()=>toast('Couldn\'t copy \u2014 select the list manually'));
+}
+
+function buildCategorySelect(){
+  document.getElementById('f-category').innerHTML =
+    CATEGORIES.map(c=>'<option value="'+c.id+'">'+c.label+'</option>').join('');
+}
+function addIngRow(){
+  const row = document.createElement('div');
+  row.className = 'dyn-row';
+  row.innerHTML = '<input type="text" class="amt" placeholder="amt">' +
+    '<input type="text" class="unit" placeholder="unit">' +
+    '<input type="text" class="name" placeholder="ingredient">' +
+    '<button type="button" class="dyn-remove" onclick="this.parentElement.remove()">\u00d7</button>';
+  document.getElementById('ingRows').appendChild(row);
+}
+function addStepRow(){
+  const row = document.createElement('div');
+  row.className = 'dyn-row';
+  row.innerHTML = '<textarea class="step" style="flex:1;min-height:46px;padding:9px 11px;border-radius:9px;border:1px solid var(--line-strong);font-family:inherit;font-size:16px;background:var(--card);color:var(--ink);" placeholder="Describe this step\u2026"></textarea>' +
+    '<button type="button" class="dyn-remove" onclick="this.parentElement.remove()">\u00d7</button>';
+  document.getElementById('stepRows').appendChild(row);
+}
+
+function saveNewRecipe(){
+  const g = id => document.getElementById(id).value.trim();
+  const title = g('f-title');
+  const ingredients = Array.from(document.querySelectorAll('#ingRows .dyn-row')).map(row=>{
+    const a = row.querySelector('.amt').value.trim();
+    const u = row.querySelector('.unit').value.trim();
+    const n = row.querySelector('.name').value.trim();
+    return n ? {amt: a ? parseFloat(a) : null, unit: u || null, name: n} : null;
+  }).filter(Boolean);
+  const method = Array.from(document.querySelectorAll('#stepRows .step'))
+    .map(t=>t.value.trim()).filter(Boolean);
+
+  if(!title){ toast('Give it a title first'); return; }
+  if(!ingredients.length){ toast('Add at least one ingredient'); return; }
+  if(!method.length){ toast('Add at least one method step'); return; }
+
+  const rating = g('f-rating');
+  state.recipes.push({
+    id: 'user-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    title, category: document.getElementById('f-category').value,
+    servings: g('f-servings'), time: g('f-time'), style: g('f-style'),
+    source: 'Added by you',
+    rating: rating ? parseFloat(rating) : null,
+    ingredients, method,
+    notes: g('f-notes') ? g('f-notes').split('\n').map(s=>s.trim()).filter(Boolean) : [],
+  });
+  saveRecipes();
+
+  ['f-title','f-rating','f-servings','f-time','f-style','f-notes'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('ingRows').innerHTML = '';
+  document.getElementById('stepRows').innerHTML = '';
+  addIngRow(); addIngRow(); addStepRow();
+
+  toast('Added to the stable');
+  goTo('library'); renderLibrary();
+}
+
+function exportData(){
+  const seedIds = new Set(DEFAULT_RECIPES.map(r=>r.id));
+  const added = state.recipes.filter(r=>!seedIds.has(r.id));
+  const rated = state.recipes.filter(r=>{
+    if(!seedIds.has(r.id)) return false;
+    const seed = DEFAULT_RECIPES.find(d=>d.id===r.id);
+    return r.rating != null && r.rating !== seed.rating;
+  }).map(r=>({title:r.title, rating:r.rating}));
+
+  let out = 'THE STABLE - my changes\n\n';
+  if(rated.length){
+    out += 'RATINGS I SET:\n';
+    rated.forEach(r=>{ out += '- ' + r.title + ': ' + r.rating + '/10\n'; });
+    out += '\n';
+  }
+  if(added.length){
+    out += 'RECIPES I ADDED:\n' + JSON.stringify(added, null, 1) + '\n';
+  }
+  if(!rated.length && !added.length){
+    out += '(No changes yet - nothing added or rated in the app.)';
+  }
+  navigator.clipboard.writeText(out)
+    .then(()=>toast('Copied - paste it into Claude'))
+    .catch(()=>{
+      const w = window.open('', '_blank');
+      if(w){ w.document.write('<pre style="white-space:pre-wrap;font:14px system-ui;padding:16px">'+esc(out)+'</pre>'); }
+      else toast('Copy failed');
+    });
+}
+
+function esc(str){
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : str;
+  return d.innerHTML;
+}
+
+init();
+</script>
+</body>
+</html>
